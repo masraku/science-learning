@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lab Kimia Virtual — Belajar dengan Bereksperimen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Bangers&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#2b2140; --paper:#fff6e0; --card:#fffdf7; --muted:#7a6f8c;
+    --pink:#ff4fa8; --blue:#3fa9ff; --yellow:#ffd23f; --cell:42px; --dockH:0px;
+  }
+  @media (min-width:900px){ :root{ --cell:48px; } }
+  *{box-sizing:border-box}
+  html,body{margin:0;color:var(--ink);font-family:"Fredoka",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  body{background-color:var(--paper);background-image:radial-gradient(rgba(43,33,64,.09) 1.2px, transparent 1.3px);background-size:18px 18px;min-height:100vh}
+  .wrap{max-width:1180px;margin:0 auto;padding:12px 10px calc(var(--dockH) + 24px)}
+  header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .logo{width:44px;height:44px;border-radius:14px;background:var(--yellow);border:3px solid var(--ink);box-shadow:0 3px 0 var(--ink);display:grid;place-items:center;flex:0 0 auto;rotate:-6deg}
+  header h1{font-size:21px;margin:0;font-weight:700;letter-spacing:.2px}
+  header p{margin:1px 0 0;font-size:13px;color:var(--muted)}
+  .panel{background:var(--card);border:3px solid var(--ink);border-radius:18px;box-shadow:0 5px 0 var(--ink);padding:12px}
+  .ph{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+  .ph h2{font-size:15px;margin:0;font-weight:700}
+  .hint{font-size:12.5px;color:var(--muted)}
+  .hint b{color:var(--pink)}
+
+  .layout{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}
+  .a-pt{order:1} .a-inv{order:2} .a-card{order:3}
+  @media (min-width:900px){
+    .layout{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"pt pt" "dock card" "inv card";align-items:start}
+    .a-pt{grid-area:pt} .dock{grid-area:dock} .a-card{grid-area:card} .a-inv{grid-area:inv}
+  }
+
+  /* Search */
+  .search{display:flex;align-items:center;gap:8px;background:#fff;border:3px solid var(--ink);border-radius:14px;padding:4px 6px 4px 12px;box-shadow:0 3px 0 var(--ink);margin-bottom:10px}
+  .search svg{flex:0 0 auto}
+  .search input{flex:1;min-width:0;border:0;outline:0;font:inherit;font-size:16px;background:transparent;color:var(--ink);padding:7px 0}
+  .search input::placeholder{color:#a79fb5}
+  .xbtn{font:inherit;font-weight:700;border:2px solid var(--ink);background:#ffe9f4;border-radius:10px;width:30px;height:30px;cursor:pointer;display:none}
+  .results{display:flex;flex-wrap:wrap;gap:6px;margin:-2px 0 10px}
+  .results:empty{display:none}
+  .rchip{font:inherit;font-size:13px;font-weight:600;color:var(--ink);background:#fff;border:2.5px solid var(--ink);border-radius:999px;padding:5px 11px;cursor:pointer;box-shadow:0 2px 0 var(--ink);display:inline-flex;align-items:center;gap:6px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:pan-x pan-y}
+  .rchip i{width:14px;height:14px;border-radius:5px;border:2px solid var(--ink);display:inline-block}
+  .rchip small{font-weight:500;color:var(--muted)}
+  .rchip.recipe{background:#fff4c2}
+  .rlabel{font-size:12px;color:var(--muted);align-self:center;margin-right:2px}
+
+  /* Periodic table (cartoon tiles) */
+  .pt-scroll{overflow-x:auto;padding:4px 2px 8px;-webkit-overflow-scrolling:touch}
+  .pt{display:grid;grid-template-columns:repeat(18,var(--cell));grid-auto-rows:var(--cell);gap:4px;width:max-content;margin:0 auto}
+  .cell{position:relative;border-radius:11px;border:2.5px solid var(--ink);box-shadow:0 3px 0 var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:grab;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:pan-x pan-y;transition:transform .15s cubic-bezier(.3,1.8,.5,1), opacity .2s, filter .2s}
+  .cell:hover{transform:translateY(-3px) rotate(-3deg)}
+  .cell .z{position:absolute;top:1px;left:4px;font-size:9px;font-weight:600;opacity:.75}
+  .cell .s{font-weight:700;font-size:17px;line-height:1}
+  .cell .n{font-size:7.5px;font-weight:500;opacity:.8;margin-top:1px;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;padding:0 2px;display:none}
+  @media (min-width:900px){ .cell .n{display:block} .cell .s{font-size:18px} }
+  .cell.sel{box-shadow:0 0 0 3px var(--pink),0 3px 0 var(--ink);transform:translateY(-3px)}
+  .cell.dragging{opacity:.3}
+  .cell.dim{opacity:.18;filter:grayscale(1)}
+  .cell.hit{animation:hop .6s ease infinite alternate;z-index:2}
+  @keyframes hop{from{transform:translateY(0) scale(1)}to{transform:translateY(-4px) scale(1.08)}}
+  .cell.ph2{cursor:default;background:repeating-linear-gradient(45deg,#f3ead6 0 5px,#fff8e8 5px 10px);font-size:9px;font-weight:600;color:var(--muted)}
+  .legend{display:flex;flex-wrap:wrap;gap:5px 10px;margin-top:6px}
+  .lg{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted)}
+  .lg i{width:12px;height:12px;border-radius:4px;border:2px solid var(--ink);display:inline-block}
+  .info{font-size:13px;color:var(--muted);min-height:18px;margin:2px 0 8px}
+  .info b{color:var(--ink)}
+
+  /* Reaction dock */
+  .dock{padding:8px 10px}
+  @media (max-width:899px){
+    .dock{position:fixed;left:8px;right:8px;bottom:8px;z-index:30;box-shadow:0 5px 0 var(--ink),0 14px 30px rgba(43,33,64,.25)}
+  }
+  .dock-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+  .dock-head b{font-size:15px}
+  .counter{font-size:12.5px;font-weight:600;background:var(--yellow);border:2px solid var(--ink);border-radius:999px;padding:1px 9px}
+  #chamberWrap{position:relative;border-radius:14px;overflow:hidden;border:2.5px solid var(--ink);background:#eaf7ff;transition:box-shadow .15s, background .15s}
+  #chamberWrap.over{background:#d7f9e4;box-shadow:0 0 0 3px var(--pink) inset}
+  #chamber{display:block;width:100%;cursor:pointer}
+  .cbar{display:flex;gap:6px;align-items:center;margin-top:7px}
+  .res{flex:1;min-width:0;font-size:13.5px;line-height:1.3;display:flex;flex-direction:column;justify-content:center;min-height:34px}
+  .res .eqs{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .res .nm{color:var(--muted);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .res .nm b{color:var(--pink)}
+  .btn{font:inherit;font-size:13px;font-weight:600;color:var(--ink);background:#fff;border:2.5px solid var(--ink);border-radius:12px;padding:6px 10px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 0 var(--ink)}
+  .btn:active{translate:0 2px;box-shadow:none}
+  .btn.alt{background:#ffe9f4}
+  @media (min-width:900px){ #toCard{display:none !important} }
+
+  /* Explanation card */
+  .card .empty{color:var(--muted);font-size:14px;line-height:1.6}
+  .rx-title{font-size:22px;font-weight:700;margin:0;line-height:1.2}
+  .rx-sub{font-size:14px;margin:2px 0 8px;color:var(--muted)}
+  .rx-sub b{color:var(--pink)}
+  .chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+  .chip{font-size:12px;font-weight:600;padding:2px 10px;border-radius:999px;background:#e3f3ff;border:2px solid var(--ink)}
+  .chip:nth-child(2n){background:#ffefc2} .chip:nth-child(3n){background:#ffe0ef}
+  .eq{font-weight:700;font-size:16px;background:#fff;border:2.5px dashed var(--ink);border-radius:12px;padding:10px 12px;overflow-x:auto;white-space:nowrap}
+  .sub{font-size:13px;font-weight:700;margin:12px 0 4px}
+  .txt{font-size:14px;line-height:1.6;margin:0}
+  .warn{margin-top:10px;font-size:13.5px;background:#ffe3e3;border:2.5px solid var(--ink);border-radius:12px;padding:8px 10px;font-weight:500}
+  .struct{background:#fff;border:2.5px solid var(--ink);border-radius:14px;padding:10px;margin-top:4px}
+  .struct svg{display:block;margin:0 auto;max-width:100%;height:auto}
+  .sform{text-align:center;font-weight:700;font-size:20px;letter-spacing:1px;margin:4px 0 2px}
+  .legend-b{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;align-items:center;font-size:13px;margin-top:8px;background:#fff8e1;border:2px dashed var(--ink);border-radius:12px;padding:8px 10px}
+  .legend-b .ln{font-weight:700;font-size:20px;text-align:center;min-width:30px}
+  .legend-b .on{background:#ffd23f;border-radius:8px}
+  .ions{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:8px;padding:6px 0}
+  .ion{position:relative;min-width:54px;height:54px;padding:0 10px;border-radius:999px;border:3px solid var(--ink);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:17px;box-shadow:0 3px 0 var(--ink)}
+  .ion sup{font-size:12px;position:absolute;top:-10px;right:-10px;background:#fff;border:2px solid var(--ink);border-radius:999px;padding:0 5px;line-height:18px}
+  .ion.pos sup{background:#ffd6d6} .ion.neg sup{background:#d6ecff}
+  .times{font-weight:700;color:var(--muted)}
+  .suggest{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .sg{font:inherit;font-size:13px;font-weight:600;background:#fff;color:var(--ink);border:2.5px solid var(--ink);border-radius:999px;padding:4px 11px;cursor:pointer;box-shadow:0 2px 0 var(--ink)}
+
+  /* Inventory */
+  .inv{display:flex;flex-wrap:wrap;gap:7px}
+  .cmp{font:inherit;font-weight:700;font-size:14px;color:var(--ink);border-radius:12px;border:2.5px solid var(--ink);background:#fff;padding:5px 10px;display:flex;align-items:center;gap:7px;cursor:grab;box-shadow:0 3px 0 var(--ink);user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:pan-x pan-y}
+  .cmp i{width:14px;height:14px;border-radius:50%;display:inline-block;border:2px solid var(--ink)}
+  .cmp.sel{box-shadow:0 0 0 3px var(--pink),0 3px 0 var(--ink)}
+  .cmp.dragging{opacity:.3}
+
+  .ghost{position:fixed;left:0;top:0;pointer-events:none;z-index:60;width:58px;height:58px;border-radius:14px;border:3px solid var(--ink);box-shadow:0 6px 0 var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;font-size:21px;color:var(--ink);animation:wob .5s ease-in-out infinite alternate}
+  .ghost.over{scale:1.15}
+  .ghost small{font-size:9px;font-weight:600;opacity:.8}
+  @keyframes wob{from{rotate:-8deg}to{rotate:6deg}}
+
+  .toast{position:fixed;left:50%;top:14px;transform:translateX(-50%) translateY(-20px);opacity:0;background:#fff;border:3px solid var(--ink);box-shadow:0 4px 0 var(--ink);color:var(--ink);padding:9px 14px;border-radius:16px;font-size:14px;font-weight:500;transition:all .25s;pointer-events:none;z-index:70;max-width:90vw;text-align:center}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  footer{margin-top:16px;font-size:12px;color:var(--muted);text-align:center;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 3h6M10 3v6L4.5 18.5A2 2 0 0 0 6.2 21.5h11.6a2 2 0 0 0 1.7-3L14 9V3" stroke="#2b2140" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 16h11l1.2 2.3a1.5 1.5 0 0 1-1.3 2.2H6.6a1.5 1.5 0 0 1-1.3-2.2z" fill="#3fa9ff"/></svg></div>
+    <div><h1>Lab Kimia Virtual</h1><p>Seret unsur ke labu, campur, dan lihat apa yang terjadi!</p></div>
+  </header>
+
+  <div class="layout">
+    <section class="panel a-pt">
+      <div class="search">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="10.5" cy="10.5" r="6.5" stroke="#2b2140" stroke-width="2.6"/><path d="M15.5 15.5 20 20" stroke="#2b2140" stroke-width="2.6" stroke-linecap="round"/></svg>
+        <input id="q" type="text" enterkeyhint="search" autocomplete="off" placeholder="Cari: Na, natrium, sodium, 26, garam, H2O…">
+        <button class="xbtn" id="qx" aria-label="Hapus pencarian">×</button>
+      </div>
+      <div class="results" id="results"></div>
+      <div class="ph"><h2>Tabel periodik</h2><span class="hint"><b>Tahan & seret</b> ke labu</span></div>
+      <div class="info" id="info"></div>
+      <div class="pt-scroll" id="ptScroll"><div class="pt" id="pt"></div></div>
+      <div class="legend" id="legend"></div>
+    </section>
+
+    <section class="panel dock" id="dock">
+      <div class="dock-head"><b>🧪 Labu reaksi</b><span class="counter" id="counter">0 reaksi</span></div>
+      <div id="chamberWrap"><canvas id="chamber"></canvas></div>
+      <div class="cbar">
+        <div class="res" id="res"><span class="nm">Seret 2 unsur ke labu ini</span></div>
+        <button class="btn alt" id="toCard" style="display:none">Penjelasan ↓</button>
+        <button class="btn" id="clearBtn">Kosongkan</button>
+      </div>
+    </section>
+
+    <section class="panel card a-card" id="card">
+      <div class="ph"><h2>📖 Penjelasan reaksi</h2></div>
+      <div class="empty">Belum ada reaksi. Tahan unsur di tabel sampai “terangkat”, lalu seret ke labu. Atau ketuk unsur, lalu ketuk labu.
+        <div class="sub">Coba kombinasi ini</div>
+        <div class="suggest" id="suggest"></div>
+      </div>
+    </section>
+
+    <section class="panel a-inv">
+      <div class="ph"><h2>🎒 Koleksi senyawa</h2><span class="hint">bisa diseret lagi</span></div>
+      <div class="inv" id="inv"><span class="hint">Senyawa yang kamu buat akan muncul di sini.</span></div>
+    </section>
+  </div>
+
+  <footer>Simulasi edukatif: reaksi ditampilkan dalam bentuk paling umum. Banyak di antaranya butuh pemicu (percikan api, panas, katalis) yang dijelaskan di kartu penjelasan.<br>Jangan coba di rumah tanpa pengawasan guru dan alat pelindung.</footer>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+// =================== ELEMENTS ===================
+const SYM = "H He Li Be B C N O F Ne Na Mg Al Si P S Cl Ar K Ca Sc Ti V Cr Mn Fe Co Ni Cu Zn Ga Ge As Se Br Kr Rb Sr Y Zr Nb Mo Tc Ru Rh Pd Ag Cd In Sn Sb Te I Xe Cs Ba La Ce Pr Nd Pm Sm Eu Gd Tb Dy Ho Er Tm Yb Lu Hf Ta W Re Os Ir Pt Au Hg Tl Pb Bi Po At Rn Fr Ra Ac Th Pa U Np Pu Am Cm Bk Cf Es Fm Md No Lr Rf Db Sg Bh Hs Mt Ds Rg Cn Nh Fl Mc Lv Ts Og".split(' ');
+const NAME = "Hidrogen,Helium,Litium,Berilium,Boron,Karbon,Nitrogen,Oksigen,Fluorin,Neon,Natrium,Magnesium,Aluminium,Silikon,Fosfor,Belerang,Klorin,Argon,Kalium,Kalsium,Skandium,Titanium,Vanadium,Kromium,Mangan,Besi,Kobalt,Nikel,Tembaga,Seng,Galium,Germanium,Arsen,Selenium,Bromin,Kripton,Rubidium,Stronsium,Itrium,Zirkonium,Niobium,Molibdenum,Teknesium,Rutenium,Rodium,Paladium,Perak,Kadmium,Indium,Timah,Antimon,Telurium,Iodin,Xenon,Sesium,Barium,Lantanum,Serium,Praseodimium,Neodimium,Prometium,Samarium,Europium,Gadolinium,Terbium,Disprosium,Holmium,Erbium,Tulium,Iterbium,Lutesium,Hafnium,Tantalum,Tungsten,Renium,Osmium,Iridium,Platina,Emas,Raksa,Talium,Timbal,Bismut,Polonium,Astatin,Radon,Fransium,Radium,Aktinium,Torium,Protaktinium,Uranium,Neptunium,Plutonium,Amerisium,Kurium,Berkelium,Kalifornium,Einsteinium,Fermium,Mendelevium,Nobelium,Lawrensium,Rutherfordium,Dubnium,Seaborgium,Bohrium,Hasium,Meitnerium,Darmstadtium,Roentgenium,Kopernisium,Nihonium,Flerovium,Moskovium,Livermorium,Tenesin,Oganeson".split(',');
+const CATS = {
+  alkali:{n:'Logam alkali', c:'#ff6b6b'}, alkaline:{n:'Logam alkali tanah', c:'#ffa94d'},
+  transition:{n:'Logam transisi', c:'#f2c94c'}, post:{n:'Logam pasca-transisi', c:'#7bd389'},
+  metalloid:{n:'Metaloid', c:'#4fd1c5'}, nonmetal:{n:'Nonlogam', c:'#5ab0ff'},
+  halogen:{n:'Halogen', c:'#9f7aea'}, noble:{n:'Gas mulia', c:'#d77bdb'},
+  lanthanide:{n:'Lantanida', c:'#c4a484'}, actinide:{n:'Aktinida', c:'#d48a8a'},
+};
+const setOf = s => new Set(s.split(' ').map(Number));
+const CAT_Z = {
+  alkali:setOf('3 11 19 37 55 87'), alkaline:setOf('4 12 20 38 56 88'),
+  noble:setOf('2 10 18 36 54 86 118'), halogen:setOf('9 17 35 53 85 117'),
+  nonmetal:setOf('1 6 7 8 15 16 34'), metalloid:setOf('5 14 32 33 51 52'),
+  post:setOf('13 31 49 50 81 82 83 84 113 114 115 116'),
+};
+const GASES = new Set(['H','He','N','O','F','Ne','Cl','Ar','Kr','Xe','Rn']);
+const LIQUIDS = new Set(['Br','Hg']);
+function catOf(z){
+  if (z>=57 && z<=71) return 'lanthanide';
+  if (z>=89 && z<=103) return 'actinide';
+  for (const k in CAT_Z) if (CAT_Z[k].has(z)) return k;
+  return 'transition';
+}
+function posOf(z){
+  if (z===1) return [1,1]; if (z===2) return [1,18];
+  if (z<=10) return [2, z<=4 ? z-2 : z+8];
+  if (z<=18) return [3, z<=12 ? z-10 : z];
+  if (z<=36) return [4, z-18];
+  if (z<=54) return [5, z-36];
+  if (z<=86){ if (z<=56) return [6, z-54]; if (z<=71) return [9, z-54]; return [6, z-68]; }
+  if (z<=88) return [7, z-86]; if (z<=103) return [10, z-86]; return [7, z-100];
+}
+const EL = {};
+SYM.forEach((s,i) => { const z = i+1; EL[s] = {s, z, name:NAME[i], cat:catOf(z), pos:posOf(z)}; });
+const isMetal = s => ['alkali','alkaline','transition','post','lanthanide','actinide'].includes(EL[s].cat);
+function valence(s){
+  const e = EL[s], g = e.pos[1];
+  if (s==='He') return 2;
+  if (e.pos[0] > 7 || e.cat==='transition') return null;
+  return g<=2 ? g : g-10;
+}
+
+// =================== COMPOUNDS ===================
+// id -> {f: display formula, name, col: token color}
+const C = {
+  H2O:{f:'H₂O',name:'Air',col:'#4aa3ff'}, NaCl:{f:'NaCl',name:'Natrium klorida (garam dapur)',col:'#f5f5f5'},
+  NaOH:{f:'NaOH',name:'Natrium hidroksida',col:'#e8eaf2'}, KOH:{f:'KOH',name:'Kalium hidroksida',col:'#e8eaf2'},
+  LiOH:{f:'LiOH',name:'Litium hidroksida',col:'#e8eaf2'}, RbOH:{f:'RbOH',name:'Rubidium hidroksida',col:'#e8eaf2'},
+  CsOH:{f:'CsOH',name:'Sesium hidroksida',col:'#e8eaf2'}, CaOH2:{f:'Ca(OH)₂',name:'Kalsium hidroksida (kapur mati)',col:'#f0f0f0'},
+  MgO:{f:'MgO',name:'Magnesium oksida',col:'#f7f7f7'}, Fe2O3:{f:'Fe₂O₃',name:'Besi(III) oksida (karat)',col:'#a0402a'},
+  FeS:{f:'FeS',name:'Besi(II) sulfida',col:'#2b2b2b'}, CO2:{f:'CO₂',name:'Karbon dioksida',col:'#d8d8d8'},
+  HCl:{f:'HCl',name:'Hidrogen klorida',col:'#c8ffd8'}, HF:{f:'HF',name:'Hidrogen fluorida',col:'#e5ffd5'},
+  NH3:{f:'NH₃',name:'Amonia',col:'#e8f4ff'}, Al2O3:{f:'Al₂O₃',name:'Aluminium oksida',col:'#f0f0f0'},
+  Fe_l:{f:'Fe(l)',name:'Besi cair',col:'#ff7a1a'}, SO2:{f:'SO₂',name:'Belerang dioksida',col:'#f0f0d0'},
+  P4O10:{f:'P₄O₁₀',name:'Tetrafosfor dekaoksida',col:'#ffffff'}, CuO:{f:'CuO',name:'Tembaga(II) oksida',col:'#1e1e1e'},
+  ZnS:{f:'ZnS',name:'Seng sulfida',col:'#f6f2d0'}, CaO:{f:'CaO',name:'Kalsium oksida (kapur tohor)',col:'#f4f4f4'},
+  Ag2S:{f:'Ag₂S',name:'Perak sulfida',col:'#222222'}, NO2:{f:'NO₂',name:'Nitrogen dioksida',col:'#b5651d'},
+  XeF2:{f:'XeF₂',name:'Xenon difluorida',col:'#ffffff'}, NaK:{f:'NaK',name:'Paduan natrium–kalium',col:'#c9cdd3'},
+  Bronze:{f:'Cu+Sn',name:'Perunggu',col:'#b07a3c'}, Brass:{f:'Cu+Zn',name:'Kuningan',col:'#d4b04a'},
+  Steel:{f:'Fe+C',name:'Baja',col:'#8d949e'}, Solder:{f:'Sn+Pb',name:'Timah solder',col:'#a9a9a9'},
+  Electrum:{f:'Au+Ag',name:'Elektrum',col:'#e6cf7a'}, SiO2:{f:'SiO₂',name:'Silikon dioksida (pasir/kuarsa)',col:'#efe6d0'},
+  CH4:{f:'CH₄',name:'Metana',col:'#eef6ff'}, H2CO3:{f:'H₂CO₃',name:'Asam karbonat',col:'#cfe9ff'},
+  NH4Cl:{f:'NH₄Cl',name:'Amonium klorida',col:'#fafafa'}, H2SO3:{f:'H₂SO₃',name:'Asam sulfit',col:'#e9f2ff'},
+  HNO3:{f:'HNO₃',name:'Asam nitrat',col:'#fff6d6'}, AlBr3:{f:'AlBr₃',name:'Aluminium bromida',col:'#e8e0d0'},
+  AlI3:{f:'AlI₃',name:'Aluminium iodida',col:'#d9c8b0'}, Li3N:{f:'Li₃N',name:'Litium nitrida',col:'#6b2a4a'},
+  H2S:{f:'H₂S',name:'Hidrogen sulfida',col:'#f2f0a0'}, FeCl3:{f:'FeCl₃',name:'Besi(III) klorida',col:'#6b3a1a'},
+  PCl3:{f:'PCl₃',name:'Fosfor triklorida',col:'#f4f4e0'}, SF6:{f:'SF₆',name:'Belerang heksafluorida',col:'#f0f0ff'}, HgS:{f:'HgS',name:'Raksa(II) sulfida',col:'#252525'},
+};
+const DIATOMIC = {H:'#eaf4ff',N:'#cfe0ff',O:'#bfe4ff',F:'#f5f5a0',Cl:'#cde86b',Br:'#8b2a12',I:'#4b1f6b'};
+const DI_NAME = {H:'Gas hidrogen',N:'Gas nitrogen',O:'Gas oksigen',F:'Gas fluorin',Cl:'Gas klorin',Br:'Bromin',I:'Iodin'};
+
+// =================== CURATED REACTIONS ===================
+const R = {
+  'H+O':{p:'H2O',eq:'2H₂ + O₂ → 2H₂O',fx:['explode'],kind:['Sintesis','Pembakaran','Eksoterm'],
+    what:'Campuran gas hidrogen dan oksigen tenang sampai ada percikan api. Begitu tersulut, molekulnya bereaksi berantai dan melepas energi besar dalam sekejap, jadi meledak. Hasilnya cuma uap air.',
+    real:'Reaksi ini menggerakkan mesin roket berbahan bakar hidrogen cair dan dipakai di sel bahan bakar (fuel cell) mobil hidrogen.', warn:'Campuran H₂ dan O₂ sangat mudah meledak.'},
+  'Cl+Na':{p:'NaCl',eq:'2Na + Cl₂ → 2NaCl',fx:['fire','smoke'],flame:'#ffcc33',smoke:'#f2f2f2',kind:['Sintesis','Redoks','Ikatan ion'],
+    what:'Natrium menyerahkan 1 elektron ke klorin. Logam lunak yang reaktif dan gas kuning-hijau beracun bereaksi hebat dengan nyala kuning terang, lalu berubah jadi kristal putih yang aman dimakan: garam dapur.',
+    real:'NaCl adalah garam dapur. Reaksi ini contoh favorit untuk menunjukkan sifat senyawa bisa sangat berbeda dari unsur penyusunnya.', warn:'Natrium dan gas klorin sama-sama berbahaya.'},
+  'H2O+Na':{p:'NaOH',eq:'2Na + 2H₂O → 2NaOH + H₂',fx:['fizz','fire','pop'],flame:'#ffcc33',kind:['Redoks','Logam + air'],
+    what:'Natrium meluncur di permukaan air sambil mendesis dan melepas gas hidrogen. Panas reaksinya bisa menyulut hidrogen itu, jadi muncul api kuning dan letupan. Airnya berubah jadi larutan basa kuat NaOH.',
+    real:'NaOH (soda api) dipakai untuk membuat sabun dan membersihkan saluran pipa.', warn:'Jangan pernah memasukkan natrium ke air tanpa pengawasan.'},
+  'H2O+K':{p:'KOH',eq:'2K + 2H₂O → 2KOH + H₂',fx:['fizz','fire','explode'],flame:'#c58cff',kind:['Redoks','Logam + air'],
+    what:'Kalium lebih reaktif dari natrium. Hidrogen yang terbentuk langsung menyala dengan api ungu muda khas kalium, biasanya disertai letupan.',
+    real:'KOH dipakai di baterai alkaline dan sabun cair.', warn:'Reaksinya bisa memercikkan logam panas.'},
+  'H2O+Li':{p:'LiOH',eq:'2Li + 2H₂O → 2LiOH + H₂',fx:['fizz'],kind:['Redoks','Logam + air'],
+    what:'Litium bereaksi paling tenang di antara logam alkali: mendesis dan melepas gelembung hidrogen tanpa terbakar. Makin ke bawah golongan 1, makin reaktif logamnya.',
+    real:'Litium dipakai di baterai HP dan mobil listrik.'},
+  'H2O+Rb':{p:'RbOH',eq:'2Rb + 2H₂O → 2RbOH + H₂',fx:['bigboom','fire'],flame:'#d0306f',kind:['Redoks','Logam + air'],
+    what:'Rubidium ada di bawah kalium pada golongan 1, jadi lebih reaktif lagi: begitu menyentuh air langsung meledak.',
+    real:'Rubidium dipakai di jam atom yang menjaga ketepatan sinyal GPS.', warn:'Ledakan hebat.'},
+  'Cs+H2O':{p:'CsOH',eq:'2Cs + 2H₂O → 2CsOH + H₂',fx:['bigboom','fire'],flame:'#7a7aff',kind:['Redoks','Logam + air'],
+    what:'Sesium salah satu logam paling reaktif. Elektron terluarnya sangat jauh dari inti sehingga gampang lepas. Begitu menyentuh air langsung meledak, bahkan bisa memecahkan wadah kaca.',
+    real:'Satuan detik didefinisikan dari getaran atom sesium-133.', warn:'Ledakan sangat hebat.'},
+  'Ca+H2O':{p:'CaOH2',eq:'Ca + 2H₂O → Ca(OH)₂ + H₂',fx:['fizz','color'],kind:['Redoks','Logam + air'],
+    what:'Kalsium tenggelam lalu mendesis, melepas gelembung hidrogen. Larutannya jadi keruh karena Ca(OH)₂ sukar larut.',
+    real:'Ca(OH)₂ (air kapur) dipakai untuk menguji gas CO₂ dan menjernihkan air.'},
+  'Mg+O':{p:'MgO',eq:'2Mg + O₂ → 2MgO',fx:['flash','smoke'],smoke:'#f4f4f4',kind:['Pembakaran','Oksidasi'],
+    what:'Pita magnesium yang disulut terbakar dengan cahaya putih yang sangat terang dan menyisakan abu putih MgO.',
+    real:'Dipakai di kembang api, suar darurat, dan lampu kilat kamera zaman dulu.', warn:'Jangan menatap cahayanya langsung.'},
+  'Fe+O':{p:'Fe2O3',eq:'4Fe + 3O₂ → 2Fe₂O₃',fx:['rust'],kind:['Oksidasi','Korosi'],
+    what:'Besi pelan-pelan bereaksi dengan oksigen (lebih cepat kalau ada air) membentuk karat cokelat kemerahan. Di dunia nyata butuh berhari-hari, di sini dipercepat.',
+    real:'Karat merusak jembatan dan kendaraan, makanya besi dicat atau digalvanisasi (dilapisi seng).'},
+  'Fe+S':{p:'FeS',eq:'Fe + S → FeS',fx:['glow','smoke'],glow:'#ff5a1f',smoke:'#cfcfa0',kind:['Sintesis','Eksoterm'],
+    what:'Campuran serbuk besi dan belerang yang dipanaskan sedikit akan membara merah dengan sendirinya, karena panas reaksinya cukup untuk terus berjalan. Hasilnya besi(II) sulfida hitam yang tidak bisa lagi dipisahkan pakai magnet.',
+    real:'Contoh klasik perbedaan campuran dan senyawa di pelajaran kimia.'},
+  'C+O':{p:'CO2',eq:'C + O₂ → CO₂',fx:['fire'],flame:'#ff8a2a',kind:['Pembakaran','Eksoterm'],
+    what:'Karbon (arang) terbakar dengan oksigen, melepas panas dan gas karbon dioksida yang tidak berwarna.',
+    real:'Begitulah arang memanggang sate. CO₂ juga gas rumah kaca utama penyebab pemanasan global.'},
+  'Cl+H':{p:'HCl',eq:'H₂ + Cl₂ → 2HCl',fx:['explode'],kind:['Sintesis','Reaksi berantai'],
+    what:'Dalam gelap campurannya tenang, tapi kena cahaya terang (sinar UV) langsung meledak lewat reaksi berantai radikal. Gas HCl yang terbentuk larut di air jadi asam klorida.',
+    real:'Asam klorida ada di lambung kita untuk membantu mencerna makanan.', warn:'Gas klorin dan HCl beracun.'},
+  'F+H':{p:'HF',eq:'H₂ + F₂ → 2HF',fx:['bigboom'],kind:['Sintesis','Eksoterm'],
+    what:'Fluorin adalah unsur paling reaktif. Dengan hidrogen langsung meledak, bahkan dalam gelap dan suhu sangat dingin.',
+    real:'HF bisa melarutkan kaca, dipakai untuk mengukir kaca dan membuat chip komputer.', warn:'HF sangat beracun dan bisa menembus kulit.'},
+  'H+N':{p:'NH3',eq:'N₂ + 3H₂ ⇌ 2NH₃',fx:['gas'],gas:'#e8f4ff',kind:['Sintesis','Kesetimbangan'],
+    what:'Nitrogen sangat stabil karena ikatan rangkap tiganya, jadi reaksi ini butuh tekanan tinggi (±200 atm), suhu ±450 °C, dan katalis besi. Ini Proses Haber–Bosch.',
+    real:'Amonia diolah jadi pupuk urea. Sekitar separuh makanan dunia bergantung pada reaksi ini.'},
+  'Al+O':{p:'Al2O3',eq:'4Al + 3O₂ → 2Al₂O₃',fx:['flash','spark'],kind:['Pembakaran','Oksidasi'],
+    what:'Serbuk aluminium terbakar sangat terang dan panas. Pada aluminium batangan, lapisan Al₂O₃ tipis justru melindungi logamnya dari karat.',
+    real:'Lapisan oksida inilah yang bikin panci dan kaleng aluminium awet.'},
+  'Al+Fe2O3':{p:'Fe_l',eq:'Fe₂O₃ + 2Al → 2Fe + Al₂O₃',fx:['flash','fire','spark'],flame:'#ffdd55',kind:['Redoks','Termit'],
+    what:'Aluminium merebut oksigen dari karat besi karena Al lebih reaktif dari Fe. Reaksinya sangat eksoterm sampai suhunya melewati 2.500 °C, cukup untuk melelehkan besi yang terbentuk.',
+    real:'Reaksi termit dipakai untuk mengelas rel kereta api di lapangan.', warn:'Sangat panas dan tidak bisa dipadamkan dengan air.'},
+  'O+S':{p:'SO2',eq:'S + O₂ → SO₂',fx:['fire','smoke'],flame:'#4d7dff',smoke:'#e6e6d0',kind:['Pembakaran','Oksidasi'],
+    what:'Belerang meleleh lalu terbakar dengan nyala biru yang khas, menghasilkan gas SO₂ berbau menyengat.',
+    real:'SO₂ dari pembakaran batu bara menyebabkan hujan asam. Dalam jumlah kecil dipakai sebagai pengawet buah kering.', warn:'Gas SO₂ menyesakkan napas.'},
+  'O+P':{p:'P4O10',eq:'P₄ + 5O₂ → P₄O₁₀',fx:['glow','fire','smoke'],glow:'#7dff9a',flame:'#fff2b0',smoke:'#ffffff',kind:['Pembakaran','Oksidasi'],
+    what:'Fosfor putih bisa menyala sendiri di udara pada suhu ruang. Sebelum terbakar ia berpendar hijau dalam gelap, makanya dinamai “pembawa cahaya”. Asap putih tebalnya adalah P₄O₁₀.',
+    real:'Fosfor merah yang lebih aman ada di bidang gesek kotak korek api.', warn:'Fosfor putih beracun dan bisa membakar kulit.'},
+  'Cu+O':{p:'CuO',eq:'2Cu + O₂ → 2CuO',fx:['rust'],kind:['Oksidasi'],
+    what:'Tembaga yang dipanaskan di udara pelan-pelan tertutup lapisan hitam tembaga(II) oksida.',
+    real:'Di udara lembap dalam waktu lama, tembaga membentuk patina hijau seperti warna Patung Liberty.'},
+  'S+Zn':{p:'ZnS',eq:'Zn + S → ZnS',fx:['flash','fire','smoke'],flame:'#c8ff6e',smoke:'#f0edc8',kind:['Sintesis','Eksoterm'],
+    what:'Serbuk seng dan belerang bereaksi sangat cepat dengan semburan api dan asap kuning-putih.',
+    real:'Campuran ini pernah dipakai sebagai bahan bakar roket amatir. ZnS juga dipakai di cat yang menyala dalam gelap.', warn:'Reaksinya sangat hebat.'},
+  'Ca+O':{p:'CaO',eq:'2Ca + O₂ → 2CaO',fx:['fire'],flame:'#ff5a36',kind:['Pembakaran','Oksidasi'],
+    what:'Kalsium terbakar dengan nyala jingga-merah dan menghasilkan kapur tohor (CaO) putih.',
+    real:'Kapur tohor dipakai di industri semen dan pengolahan air.'},
+  'CaO+H2O':{p:'CaOH2',eq:'CaO + H₂O → Ca(OH)₂',fx:['smoke'],smoke:'#f2f6fa',kind:['Sintesis','Eksoterm'],
+    what:'Kapur tohor menyerap air dengan rakus dan melepas banyak panas sampai airnya mendidih dan beruap. Hasilnya kapur mati.',
+    real:'Begini cara membuat kapur untuk mengecat (melabur) tembok.', warn:'Panasnya bisa melukai kulit.'},
+  'Ag+S':{p:'Ag2S',eq:'2Ag + S → Ag₂S',fx:['rust'],kind:['Korosi'],
+    what:'Perak bereaksi dengan senyawa belerang dan membentuk lapisan hitam perak sulfida. Inilah kenapa perhiasan perak lama-lama kusam.',
+    real:'Bisa dibersihkan lagi dengan foil aluminium dan air garam panas.'},
+  'N+O':{p:'NO2',eq:'N₂ + 2O₂ → 2NO₂',fx:['spark','gas'],gas:'#b5651d',kind:['Sintesis'],
+    what:'Nitrogen dan oksigen di udara biasanya tidak bereaksi. Butuh energi sangat besar seperti petir atau mesin kendaraan; mula-mula terbentuk NO, yang segera jadi NO₂ cokelat.',
+    real:'NO₂ bikin langit kota tampak cokelat (smog) dan ikut menyebabkan hujan asam.', warn:'NO₂ beracun.'},
+  'F+Xe':{p:'XeF2',eq:'Xe + F₂ → XeF₂',fx:['color'],kind:['Sintesis','Gas mulia'],
+    what:'Gas mulia biasanya tidak bereaksi, tapi atom xenon cukup besar sehingga elektron terluarnya bisa ditarik fluorin, unsur paling elektronegatif. Hasilnya kristal putih XeF₂.',
+    real:'Senyawa gas mulia pertama dibuat tahun 1962 dan mengubah isi buku pelajaran kimia.'},
+  'K+Na':{p:'NaK',eq:'Na + K → NaK (paduan)',fx:['alloy'],kind:['Paduan logam'],
+    what:'Campuran natrium dan kalium berwujud cair pada suhu ruang, padahal masing-masing padat. Ini paduan logam, bukan senyawa.',
+    real:'NaK pernah dipakai sebagai cairan pendingin di reaktor nuklir.', warn:'Sangat reaktif terhadap air dan udara.'},
+  'Cu+Sn':{p:'Bronze',eq:'Cu + Sn → perunggu',fx:['alloy'],kind:['Paduan logam'],
+    what:'Tembaga dan timah dilebur bersama membentuk perunggu, yang jauh lebih keras dari tembaga murni.',
+    real:'Begitu pentingnya sampai satu zaman dinamai Zaman Perunggu. Gamelan juga dibuat dari perunggu.'},
+  'Cu+Zn':{p:'Brass',eq:'Cu + Zn → kuningan',fx:['alloy'],kind:['Paduan logam'],
+    what:'Tembaga dan seng dilebur jadi kuningan yang berwarna kuning keemasan, lebih kuat, dan mudah dibentuk.',
+    real:'Dipakai untuk keran air, kunci, dan alat musik tiup seperti terompet.'},
+  'C+Fe':{p:'Steel',eq:'Fe + C (< 2%) → baja',fx:['alloy','spark'],kind:['Paduan logam'],
+    what:'Menambahkan sedikit karbon (kurang dari 2%) ke besi cair membuatnya jauh lebih kuat dan keras: baja.',
+    real:'Rangka gedung, jembatan, rel, dan mobil.'},
+  'Pb+Sn':{p:'Solder',eq:'Sn + Pb → timah solder',fx:['alloy'],kind:['Paduan logam'],
+    what:'Paduan timah dan timbal punya titik leleh rendah (±183 °C), lebih rendah dari masing-masing logamnya.',
+    real:'Dipakai untuk menyambung komponen elektronik. Sekarang banyak diganti solder bebas timbal.'},
+  'Ag+Au':{p:'Electrum',eq:'Au + Ag → elektrum',fx:['alloy'],kind:['Paduan logam'],
+    what:'Emas dan perak bercampur sempurna membentuk elektrum yang berwarna kuning pucat.',
+    real:'Koin pertama di dunia (Lydia, abad ke-7 SM) terbuat dari elektrum alami.'},
+  'O+Si':{p:'SiO2',eq:'Si + O₂ → SiO₂',fx:['color'],kind:['Oksidasi','Ikatan kovalen'],
+    what:'Silikon membentuk ikatan yang sangat kuat dengan oksigen menjadi silikon dioksida, padatan jaringan kovalen yang sangat stabil.',
+    real:'SiO₂ adalah pasir dan kuarsa, bahan utama kaca dan semen.'},
+  'C+H':{p:'CH4',eq:'C + 2H₂ → CH₄',fx:['gas'],gas:'#eef6ff',kind:['Sintesis','Hidrokarbon'],
+    what:'Karbon dan hidrogen membentuk metana, hidrokarbon paling sederhana. Di alam metana terbentuk dari penguraian bahan organik tanpa oksigen.',
+    real:'Metana adalah komponen utama gas alam untuk kompor dan pembangkit listrik.'},
+  'CO2+H2O':{p:'H2CO3',eq:'CO₂ + H₂O ⇌ H₂CO₃',fx:['fizz'],kind:['Asam lemah','Kesetimbangan'],
+    what:'Sebagian CO₂ larut di air membentuk asam karbonat yang lemah. Begitu tekanannya dilepas, CO₂ keluar lagi jadi gelembung.',
+    real:'Inilah yang bikin minuman bersoda berbuih dan sedikit asam.'},
+  'HCl+NaOH':{p:'NaCl',eq:'NaOH + HCl → NaCl + H₂O',fx:['color','smoke'],smoke:'#eef4fa',kind:['Netralisasi','Asam–basa'],
+    what:'H⁺ dari asam dan OH⁻ dari basa bergabung jadi air, sisanya garam NaCl. Larutannya menghangat karena reaksinya eksoterm.',
+    real:'Obat maag (antasida) bekerja dengan prinsip yang sama: menetralkan asam lambung.'},
+  'HCl+NH3':{p:'NH4Cl',eq:'NH₃ + HCl → NH₄Cl',fx:['smoke'],smoke:'#ffffff',kind:['Asam–basa','Gas → padat'],
+    what:'Kedua gas bertemu di udara dan langsung membentuk asap putih: partikel padat amonium klorida.',
+    real:'Demo favorit di lab: dua kapas di ujung tabung, dan cincin asap putih muncul lebih dekat ke HCl karena NH₃ lebih ringan dan bergerak lebih cepat.'},
+  'H2O+SO2':{p:'H2SO3',eq:'SO₂ + H₂O → H₂SO₃',fx:['gas'],gas:'#e6eeff',kind:['Asam','Hujan asam'],
+    what:'SO₂ larut dalam air membentuk asam sulfit.',
+    real:'Ini salah satu penyebab hujan asam yang merusak bangunan, patung, dan hutan.'},
+  'H2O+NO2':{p:'HNO3',eq:'3NO₂ + H₂O → 2HNO₃ + NO',fx:['gas'],gas:'#f3d9b0',kind:['Asam','Hujan asam'],
+    what:'NO₂ bereaksi dengan air membentuk asam nitrat dan sedikit gas NO.',
+    real:'Asam nitrat dipakai untuk membuat pupuk. Di atmosfer, reaksi ini ikut menyebabkan hujan asam.'},
+  'Al+Br':{p:'AlBr3',eq:'2Al + 3Br₂ → 2AlBr₃',fx:['spark','fire','smoke'],flame:'#ffb347',smoke:'#b0461e',kind:['Sintesis','Redoks'],
+    what:'Potongan aluminium dijatuhkan ke bromin cair: setelah beberapa detik muncul percikan api dan asap jingga kecokelatan.',
+    real:'Aluminium bromida dipakai sebagai katalis di industri kimia organik.', warn:'Bromin beracun dan korosif.'},
+  'Al+I':{p:'AlI3',eq:'2Al + 3I₂ → 2AlI₃',fx:['fire','smoke'],flame:'#ffb347',smoke:'#8a3fd1',kind:['Sintesis','Redoks'],
+    what:'Dengan setetes air sebagai katalis, campuran serbuk aluminium dan iodin tiba-tiba menyala dan menyemburkan uap iodin ungu yang indah.',
+    real:'Demonstrasi klasik tentang peran katalis.', warn:'Uap iodin mengiritasi.'},
+  'Li+N':{p:'Li3N',eq:'6Li + N₂ → 2Li₃N',fx:['rust'],kind:['Sintesis'],
+    what:'Litium adalah satu-satunya logam alkali yang bereaksi langsung dengan gas nitrogen pada suhu ruang, membentuk litium nitrida yang merah-ungu gelap.',
+    real:'Li₃N diteliti sebagai bahan baterai dan penyimpan hidrogen.'},
+  'H+S':{p:'H2S',eq:'H₂ + S → H₂S',fx:['gas'],gas:'#f2f0a0',kind:['Sintesis'],
+    what:'Hidrogen yang dialirkan ke belerang panas membentuk hidrogen sulfida, gas berbau telur busuk.',
+    real:'Bau di sekitar kawah gunung berapi dan selokan.', warn:'H₂S beracun walau dalam jumlah kecil.'},
+  'Cl+Fe':{p:'FeCl3',eq:'2Fe + 3Cl₂ → 2FeCl₃',fx:['fire','smoke'],flame:'#ff9a3c',smoke:'#8b5a2b',kind:['Sintesis','Redoks'],
+    what:'Wol besi panas yang dimasukkan ke gas klorin terbakar sendiri dan menghasilkan asap cokelat besi(III) klorida.',
+    real:'FeCl₃ dipakai untuk mengetsa (melarutkan tembaga) papan PCB.'},
+  'F+S':{p:'SF6',eq:'S + 3F₂ → SF₆',fx:['fire','gas'],flame:'#9ad0ff',gas:'#f0f0ff',kind:['Sintesis'],
+    what:'Belerang terbakar dalam fluorin membentuk SF₆, gas yang sangat stabil dan tidak beracun.',
+    real:'SF₆ jauh lebih berat dari udara: kalau dihirup suara jadi berat (kebalikan helium). Dipakai sebagai isolator listrik tegangan tinggi.'},
+  'Cl+P':{p:'PCl3',eq:'2P + 3Cl₂ → 2PCl₃',fx:['fire','smoke'],flame:'#fff2b0',smoke:'#eef2d0',kind:['Sintesis','Ikatan kovalen'],
+    what:'Fosfor terbakar sendiri dalam gas klorin dengan nyala pucat dan asap. Kalau klorinnya berlebih, PCl₃ bereaksi lagi jadi PCl₅.',
+    real:'PCl₃ adalah bahan baku pestisida, obat, dan zat tahan api.', warn:'Gas klorin dan PCl₃ beracun.'},
+  'Hg+S':{p:'HgS',eq:'Hg + S → HgS',fx:['rust'],kind:['Sintesis'],
+    what:'Raksa cair langsung bereaksi dengan serbuk belerang membentuk raksa(II) sulfida padat.',
+    real:'Serbuk belerang ditaburkan untuk mengamankan tumpahan raksa dari termometer pecah.', warn:'Uap raksa beracun.'},
+};
+
+// =================== GENERIC RULES ===================
+const ANION = {F:[-1,'fluorida',true],Cl:[-1,'klorida',true],Br:[-1,'bromida',true],I:[-1,'iodida',true],At:[-1,'astatida',true],
+  O:[-2,'oksida',true],S:[-2,'sulfida',false],Se:[-2,'selenida',false],Te:[-2,'telurida',false],N:[-3,'nitrida',true],P:[-3,'fosfida',false],H:[-1,'hidrida',true]};
+const CATION = {Li:1,Na:1,K:1,Rb:1,Cs:1,Fr:1,Be:2,Mg:2,Ca:2,Sr:2,Ba:2,Ra:2,Al:3,Ga:3,In:3,Tl:1,Sn:4,Pb:2,Bi:3,
+  Sc:3,Ti:4,V:5,Cr:3,Mn:2,Fe:3,Co:2,Ni:2,Cu:2,Zn:2,Y:3,Zr:4,Nb:5,Mo:6,Tc:7,Ag:1,Cd:2,Hf:4,Ta:5,W:6,Re:7,Hg:2,
+  B:3,Si:4,Ge:4,As:3,Sb:3,Te:4,Po:2,Th:4,U:4,Ac:3,Pa:5,Np:4,Pu:4};
+const OXIDE_Q = {Mn:4};
+const MULTI = new Set(['Fe','Cu','Mn','Cr','Co','Sn','Pb','Hg','Ti','V','Tl','Mo','W','U','Pu','Np']);
+const NOBLE_METAL = new Set(['Au','Pt','Ir','Os','Rh','Ru','Pd']);
+const FLAME = {Li:'#ff2d4a',Na:'#ffcc33',K:'#c58cff',Rb:'#d0306f',Cs:'#7a7aff',Fr:'#ff4d6d',Ca:'#ff5a36',Sr:'#ff1a3a',Ba:'#a6ff4d',Cu:'#3dffb0',Mg:'#ffffff',Al:'#ffffff'};
+const ROMAN = ['','I','II','III','IV','V','VI','VII'];
+const SUB = n => n === 1 ? '' : String(n).replace(/\d/g, d => '₀₁₂₃₄₅₆₇₈₉'[d]);
+const gcd = (a,b) => b ? gcd(b, a%b) : a;
+const coef = n => n === 1 ? '' : String(n);
+
+function genericReaction(a, b){
+  const A = EL[a], B = EL[b];
+  if (a === b){
+    if (DIATOMIC[a]) return {gen:true, product:{id:a+'2', f:a+'₂', name:DI_NAME[a], col:DIATOMIC[a]}, eq:`${a} + ${a} → ${a}₂`, fx:['molecule'], kind:['Molekul diatomik','Ikatan kovalen'],
+      what:`Dua atom ${A.name.toLowerCase()} berbagi pasangan elektron (ikatan kovalen) membentuk molekul ${a}₂. Di alam, ${A.name.toLowerCase()} memang selalu berpasangan seperti ini karena lebih stabil.`,
+      real:`Yang kita sebut “${DI_NAME[a].toLowerCase()}” sehari-hari sebenarnya kumpulan molekul ${a}₂.`};
+    return {none:true, msg:`Atom-atom ${A.name.toLowerCase()} hanya berkumpul jadi zat ${A.name.toLowerCase()} itu sendiri. Tidak ada zat baru yang terbentuk.`};
+  }
+  if (A.cat === 'noble' || B.cat === 'noble'){
+    const g = A.cat === 'noble' ? A : B;
+    return {none:true, msg:`${g.name} adalah gas mulia: kulit elektron terluarnya sudah penuh, jadi hampir tidak mau bereaksi dengan apa pun. (Pengecualian langka: xenon dengan fluorin.)`};
+  }
+  if (A.z >= 99 || B.z >= 99){
+    const x = A.z >= 93 ? A : B;
+    return {none:true, msg:`${x.name} adalah unsur buatan yang radioaktif. Biasanya hanya ada beberapa atom saja yang dibuat di reaktor atau akselerator, jadi hampir tidak pernah direaksikan seperti ini.`};
+  }
+  const mA = isMetal(a), mB = isMetal(b);
+  if ((NOBLE_METAL.has(a) && !mB) || (NOBLE_METAL.has(b) && !mA)){
+    const nm = NOBLE_METAL.has(a) ? A : B;
+    return {none:true, msg:`${nm.name} termasuk logam mulia yang sangat tidak reaktif. Itu sebabnya perhiasan ${nm.name.toLowerCase()} tetap berkilau ratusan tahun. Untuk melarutkan emas pun butuh air raja (campuran HNO₃ dan HCl pekat).`};
+  }
+  if (mA && mB){
+    return {gen:true, product:{id:'alloy_'+[a,b].sort().join(''), f:`${a}+${b}`, name:`Paduan ${A.name.toLowerCase()}–${B.name.toLowerCase()}`, col:'#b9c0c8'},
+      eq:`${a} + ${b} → paduan logam`, fx:['alloy'], kind:['Paduan logam','Bukan reaksi kimia'],
+      what:'Logam dengan logam tidak membentuk senyawa ion, karena keduanya sama-sama ingin melepas elektron. Tapi kalau dilebur bersama, atom-atomnya bercampur jadi paduan logam (alloy) yang sifatnya bisa lebih unggul.',
+      real:'Hampir semua logam di sekitar kita sebenarnya paduan: baja, kuningan, perunggu, emas 18 karat.'};
+  }
+  // metal / metalloid "cation" + nonmetal "anion"
+  let M = null, X = null;
+  if (mA && ANION[b]) { M = a; X = b; }
+  else if (mB && ANION[a]) { M = b; X = a; }
+  else if (EL[a].cat === 'metalloid' && (b === 'O' || ANION[b]?.[0] === -1) && b !== 'H') { M = a; X = b; }
+  else if (EL[b].cat === 'metalloid' && (a === 'O' || ANION[a]?.[0] === -1) && a !== 'H') { M = b; X = a; }
+  if (M && X){
+    if (X === 'H' && !['alkali','alkaline'].includes(EL[M].cat))
+      return {none:true, msg:`${EL[M].name} hampir tidak bereaksi langsung dengan hidrogen dalam kondisi biasa.`};
+    let q = (X === 'O' && OXIDE_Q[M]) || CATION[M] || (EL[M].cat === 'lanthanide' ? 3 : 2);
+    const [an, aname, diat] = ANION[X];
+    const qa = -an, g = gcd(q, qa), nM = qa/g, nX = q/g;
+    const formula = `${M}${SUB(nM)}${X}${SUB(nX)}`;
+    const rn = MULTI.has(M) ? `(${ROMAN[q]})` : '';
+    const name = `${EL[M].name}${rn} ${aname}`;
+    // balanced equation
+    let k = 1; if (diat && nX % 2) k = 2;
+    let cM = nM*k, cX = diat ? nX*k/2 : nX*k, cP = k;
+    const gg = gcd(gcd(cM, cX), cP); cM /= gg; cX /= gg; cP /= gg;
+    const eq = `${coef(cM)}${M} + ${coef(cX)}${X}${diat ? '₂' : ''} → ${coef(cP)}${formula}`;
+    // how violent?
+    const cat = EL[M].cat; let fx, kind = ['Sintesis','Ikatan ion'], cond = '';
+    const flame = FLAME[M] || '#ff9a3c';
+    if (X === 'F') fx = cat === 'alkali' ? ['bigboom','fire'] : ['fire','smoke'];
+    else if (ANION[X][0] === -1 && X !== 'H'){
+      if (cat === 'alkali') fx = ['K','Rb','Cs','Fr'].includes(M) ? ['explode','fire','smoke'] : ['fire','smoke'];
+      else if (cat === 'alkaline' || M === 'Al') fx = ['fire','smoke'];
+      else if (cat === 'transition'){ fx = ['fire','smoke']; cond = 'Biasanya logamnya perlu dipanaskan dulu supaya reaksi mulai.'; }
+      else fx = ['color'];
+    } else if (X === 'O'){
+      kind = ['Oksidasi','Pembakaran'];
+      if (cat === 'alkali') fx = ['fire','smoke'];
+      else if (M === 'Mg' || M === 'Al') fx = ['flash','smoke'];
+      else if (cat === 'alkaline') fx = ['fire','smoke'];
+      else { fx = ['rust']; kind = ['Oksidasi','Korosi']; cond = 'Pada logam ini oksidasi biasanya berlangsung pelan (korosi), kecuali logamnya berupa serbuk halus atau dipanaskan.'; }
+    } else if (X === 'H'){ fx = ['color']; kind = ['Sintesis','Hidrida']; cond = 'Butuh logam yang dipanaskan dalam aliran gas hidrogen.'; }
+    else if (['S','Se','Te'].includes(X)){ fx = ['glow','smoke']; cond = 'Campurannya perlu dipicu panas sedikit, lalu reaksi berjalan sendiri sambil membara.'; }
+    else { fx = ['color']; cond = 'Reaksinya perlu suhu tinggi.'; }
+    const ve = q;
+    const col = X === 'O' ? (cat==='transition' || cat==='post' ? '#9aa3ad' : '#f2f2f2') : (['S','Se','Te'].includes(X) ? '#3a3a3a' : '#eeeeee');
+    return {gen:true, product:{id:formula, f:formula, name, col}, ions:[[M,q,nM],[X,an,nX]], eq, fx, kind, flame, smoke: X==='O' ? '#f2f2f2' : '#dddddd',
+      what:`${EL[M].name} melepas ${ve} elektron per atom, dan ${EL[X].name.toLowerCase()} menangkapnya. Ion positif dan negatif yang terbentuk saling tarik membentuk senyawa ion ${formula}. Perbandingannya ${nM}:${nX} supaya muatannya seimbang (${nM}×(+${q}) + ${nX}×(${an}) = 0). ${cond}`.trim(),
+      real:`Rumus ini dihitung dari muatan ion yang paling umum. Beberapa logam bisa punya muatan lain dan membentuk senyawa yang berbeda.`,
+      warn: (EL[M].z >= 84 || ['Tc','Pm'].includes(M)) ? `${EL[M].name} adalah unsur radioaktif. Hanya ditangani di laboratorium khusus.` : (X === 'F' ? 'Gas fluorin sangat beracun dan korosif.' : null)};
+  }
+  if (a === 'H' || b === 'H'){
+    const o = a === 'H' ? b : a;
+    if (['Br','I'].includes(o)) return {gen:true, product:{id:'H'+o, f:'H'+o, name:`Hidrogen ${o==='Br'?'bromida':'iodida'}`, col:'#f0f0e0'}, eq:`H₂ + ${o}₂ → 2H${o}`, fx:['gas'], gas: o==='Br' ? '#c86a3a' : '#9b6bd1', kind:['Sintesis'],
+      what:`Hidrogen bereaksi dengan ${EL[o].name.toLowerCase()} saat dipanaskan membentuk gas H${o}, yang di dalam air menjadi asam kuat.`, real:'Halogen makin ke bawah golongan 17 makin kurang reaktif terhadap hidrogen.'};
+  }
+  return {none:true, msg:`Kombinasi ${A.name.toLowerCase()} dan ${B.name.toLowerCase()} tidak bereaksi dalam kondisi biasa, atau butuh kondisi khusus yang belum ada di database kami.`};
+}
+
+// =================== ITEMS ===================
+const itemKey = it => it.t === 'el' ? it.s : it.id;
+function itemLabel(it){ return it.t === 'el' ? it.s : (C[it.id]?.f || it.f); }
+function itemColor(it){ return it.t === 'el' ? CATS[EL[it.s].cat].c : (C[it.id]?.col || it.col || '#ccc'); }
+function itemName(it){ return it.t === 'el' ? EL[it.s].name : (C[it.id]?.name || it.name); }
+function resolve(a, b){
+  const key = [itemKey(a), itemKey(b)].sort().join('+');
+  if (R[key]) return {key, ...R[key], product:{id:R[key].p, ...C[R[key].p]}};
+  if (a.t === 'el' && b.t === 'el') return {key, ...genericReaction(a.s, b.s)};
+  return {key, none:true, msg:`${itemName(a)} dan ${itemName(b)} tidak bereaksi, atau kombinasinya belum ada di database kami. Coba campur dengan unsur lain!`};
+}
+
+
+// =================== CARTOON PALETTE ===================
+const INK = '#2b2140';
+Object.assign(CATS.alkali,{c:'#ff8a80'}); Object.assign(CATS.alkaline,{c:'#ffbf69'}); Object.assign(CATS.transition,{c:'#ffe066'});
+Object.assign(CATS.post,{c:'#9be89b'}); Object.assign(CATS.metalloid,{c:'#7fe0d4'}); Object.assign(CATS.nonmetal,{c:'#8ecbff'});
+Object.assign(CATS.halogen,{c:'#c9a7ff'}); Object.assign(CATS.noble,{c:'#ffa8e6'}); Object.assign(CATS.lanthanide,{c:'#e6c9a8'}); Object.assign(CATS.actinide,{c:'#f0a8a8'});
+
+const EN = "Hydrogen Helium Lithium Beryllium Boron Carbon Nitrogen Oxygen Fluorine Neon Sodium Magnesium Aluminium Silicon Phosphorus Sulfur Chlorine Argon Potassium Calcium Scandium Titanium Vanadium Chromium Manganese Iron Cobalt Nickel Copper Zinc Gallium Germanium Arsenic Selenium Bromine Krypton Rubidium Strontium Yttrium Zirconium Niobium Molybdenum Technetium Ruthenium Rhodium Palladium Silver Cadmium Indium Tin Antimony Tellurium Iodine Xenon Caesium Barium Lanthanum Cerium Praseodymium Neodymium Promethium Samarium Europium Gadolinium Terbium Dysprosium Holmium Erbium Thulium Ytterbium Lutetium Hafnium Tantalum Tungsten Rhenium Osmium Iridium Platinum Gold Mercury Thallium Lead Bismuth Polonium Astatine Radon Francium Radium Actinium Thorium Protactinium Uranium Neptunium Plutonium Americium Curium Berkelium Californium Einsteinium Fermium Mendelevium Nobelium Lawrencium Rutherfordium Dubnium Seaborgium Bohrium Hassium Meitnerium Darmstadtium Roentgenium Copernicium Nihonium Flerovium Moscovium Livermorium Tennessine Oganesson".split(' ');
+const ALIAS = {Cs:'cesium',Al:'aluminum',S:'sulfur sulphur',W:'wolfram',Hg:'air raksa merkuri',Sn:'timah putih',Pb:'timah hitam',Na:'sodium',K:'potasium',Fe:'ferrum',Cu:'cuprum',Ag:'argentum',Au:'aurum'};
+SYM.forEach((s,i) => { EL[s].en = EN[i]; });
+
+// =================== HELPERS ===================
+const $ = s => document.querySelector(s);
+const rnd = (a,b) => a + Math.random()*(b-a);
+function hexRgb(h){ h = h.replace('#',''); if (h.length===3) h = h.split('').map(x=>x+x).join(''); const n = parseInt(h,16); return [(n>>16)&255,(n>>8)&255,n&255]; }
+const rgba = (h,a) => { const [r,g,b] = hexRgb(h); return `rgba(${r},${g},${b},${a})`; };
+function shade(h, f){ const [r,g,b] = hexRgb(h); const m = v => Math.round(f<0 ? v*(1+f) : v+(255-v)*f); return `rgb(${m(r)},${m(g)},${m(b)})`; }
+function lum(h){ const [r,g,b] = hexRgb(h); return (0.299*r+0.587*g+0.114*b)/255; }
+function mix(a,b,t){ const A = hexRgb(a), B = hexRgb(b); return '#'+A.map((v,i)=>Math.round(v+(B[i]-v)*t).toString(16).padStart(2,'0')).join(''); }
+const norm = s => s.toLowerCase().replace(/[₀-₉]/g, d => '0123456789'['₀₁₂₃₄₅₆₇₈₉'.indexOf(d)]).replace(/\s+/g,' ').trim();
+let toastTimer;
+function toast(m){ const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2300); }
+
+// =================== TABLE ===================
+const pt = $('#pt'); const cellOf = {};
+for (const s of SYM){
+  const e = EL[s]; const [r, c] = e.pos;
+  const d = document.createElement('div');
+  d.className = 'cell'; d.dataset.s = s;
+  d.style.cssText = `grid-row:${r};grid-column:${c};background:${CATS[e.cat].c}`;
+  d.innerHTML = `<span class="z">${e.z}</span><span class="s">${s}</span><span class="n">${e.name}</span>`;
+  pt.appendChild(d); cellOf[s] = d;
+  makeDraggable(d, () => ({t:'el', s}));
+}
+[['57–71',6],['89–103',7]].forEach(([t,r]) => { const d = document.createElement('div'); d.className = 'cell ph2'; d.style.cssText = `grid-row:${r};grid-column:3`; d.textContent = t; pt.appendChild(d); });
+pt.style.gridTemplateRows = 'repeat(7,var(--cell)) 6px repeat(2,var(--cell))';
+$('#legend').innerHTML = Object.values(CATS).map(c => `<span class="lg"><i style="background:${c.c}"></i>${c.n}</span>`).join('');
+
+// =================== SEARCH ===================
+const RECIPES = (() => {
+  const out = [];
+  for (const [key, r] of Object.entries(R)){
+    const p = C[r.p]; if (!p) continue;
+    out.push({key, id:r.p, f:p.f, name:p.name, parts:key.split('+')});
+  }
+  return out;
+})();
+const q = $('#q'), qx = $('#qx'), results = $('#results');
+function partLabel(k){ return EL[k] ? k : (C[k]?.f || k); }
+function runSearch(){
+  const raw = q.value, s = norm(raw);
+  qx.style.display = raw ? 'block' : 'none';
+  results.innerHTML = '';
+  if (!s){ for (const c of Object.values(cellOf)) c.classList.remove('dim','hit'); return; }
+  const hits = [];
+  for (const sym of SYM){
+    const e = EL[sym]; let score = 0;
+    const ls = sym.toLowerCase(), nm = e.name.toLowerCase(), en = e.en.toLowerCase(), al = (ALIAS[sym]||'').toLowerCase();
+    if (ls === s || String(e.z) === s) score = 100;
+    else if (nm === s || en === s) score = 90;
+    else if (nm.startsWith(s) || en.startsWith(s) || (al && al.split(' ').some(w => w.startsWith(s)))) score = 70;
+    else if (s.length >= 2 && ls.startsWith(s)) score = 60;
+    else if (s.length >= 3 && (nm.includes(s) || en.includes(s) || al.includes(s))) score = 40;
+    if (score) hits.push([score, sym]);
+  }
+  hits.sort((a,b) => b[0]-a[0] || EL[a[1]].z - EL[b[1]].z);
+  const hitSet = new Set(hits.map(h => h[1]));
+  for (const [sym, c] of Object.entries(cellOf)){ c.classList.toggle('hit', hitSet.has(sym)); c.classList.toggle('dim', !hitSet.has(sym)); }
+  if (hits.length){
+    const first = cellOf[hits[0][1]], sc = $('#ptScroll');
+    sc.scrollTo({left: Math.max(0, first.offsetLeft - sc.clientWidth/2 + 20), behavior:'smooth'});
+  }
+  // element chips
+  if (hits.length){
+    const lab = document.createElement('span'); lab.className = 'rlabel'; lab.textContent = 'Unsur:'; results.appendChild(lab);
+    hits.slice(0, 8).forEach(([,sym]) => {
+      const e = EL[sym]; const b = document.createElement('span'); b.className = 'rchip';
+      b.innerHTML = `<i style="background:${CATS[e.cat].c}"></i>${sym} <small>${e.name} · ${e.z}</small>`;
+      makeDraggable(b, () => ({t:'el', s:sym}));
+      results.appendChild(b);
+    });
+  }
+  // compound recipes
+  const rec = RECIPES.filter(r => norm(r.name).includes(s) || norm(r.f).includes(s) || (s.length <= 2 && r.parts.includes(raw.trim()))).slice(0, 6);
+  if (rec.length){
+    const lab = document.createElement('span'); lab.className = 'rlabel'; lab.textContent = hits.length ? ' Resep:' : 'Resep:'; results.appendChild(lab);
+    rec.forEach(r => {
+      const b = document.createElement('button'); b.className = 'rchip recipe';
+      b.innerHTML = `${r.f} <small>= ${r.parts.map(partLabel).join(' + ')}</small>`;
+      b.title = r.name;
+      b.onclick = () => tryRecipe(r.parts);
+      results.appendChild(b);
+    });
+  }
+  if (!hits.length && !rec.length){ results.innerHTML = `<span class="rlabel">Tidak ketemu “${raw}”. Coba simbol (Fe), nama (besi), nama Inggris (iron), atau nomor atom (26).</span>`; }
+}
+q.addEventListener('input', runSearch);
+q.addEventListener('keydown', e => { if (e.key === 'Enter'){ const first = results.querySelector('.rchip'); if (first) first.dispatchEvent(new Event('tapsel')); q.blur(); } });
+qx.onclick = () => { q.value = ''; runSearch(); q.focus(); };
+function itemFromKey(k){ if (EL[k]) return {t:'el', s:k}; if (inventory.has(k)) { const p = inventory.get(k); return {t:'cmp', id:k, f:p.f, name:p.name, col:p.col}; } return null; }
+function tryRecipe(parts){
+  const items = parts.map(itemFromKey);
+  const miss = parts.find((k,i) => !items[i]);
+  if (miss){
+    const how = RECIPES.find(r => r.id === miss);
+    toast(`Buat ${C[miss].f} dulu${how ? ` dari ${how.parts.map(partLabel).join(' + ')}` : ''}, lalu coba lagi`);
+    return;
+  }
+  clearChamber(true); addToChamber(items[0]); setTimeout(() => addToChamber(items[1]), 380);
+}
+
+// =================== DRAG & DROP ===================
+let selected = null, drag = null;
+const wrap = $('#chamberWrap');
+function overChamber(x, y){ const r = wrap.getBoundingClientRect(); return x >= r.left-6 && x <= r.right+6 && y >= r.top-6 && y <= r.bottom+6; }
+function startDrag(src, item, x, y){
+  const g = document.createElement('div'); g.className = 'ghost';
+  g.style.background = itemColor(item);
+  g.innerHTML = `${itemLabel(item)}<small>${item.t === 'el' ? EL[item.s].z : 'senyawa'}</small>`;
+  if (itemLabel(item).length > 4) g.style.fontSize = '13px';
+  document.body.appendChild(g);
+  drag = {src, item, g}; src.classList.add('dragging');
+  try { navigator.vibrate && navigator.vibrate(12); } catch(_){}
+  moveDrag(x, y);
+}
+function moveDrag(x, y){
+  if (!drag) return;
+  drag.g.style.translate = `${x-29}px ${y-78}px`;
+  const o = overChamber(x, y); wrap.classList.toggle('over', o); drag.g.classList.toggle('over', o);
+}
+function endDrag(x, y){
+  if (!drag) return;
+  const o = overChamber(x, y), item = drag.item;
+  drag.g.remove(); drag.src.classList.remove('dragging'); wrap.classList.remove('over'); drag = null;
+  if (o) addToChamber(item);
+}
+function makeDraggable(el, getItem){
+  let pend = null;
+  el.addEventListener('tapsel', () => tapItem(el, getItem()));
+  el.addEventListener('mousedown', e => {
+    if (e.button) return; e.preventDefault();
+    pend = {x:e.clientX, y:e.clientY};
+    const mm = ev => { if (drag) moveDrag(ev.clientX, ev.clientY); else if (pend && Math.hypot(ev.clientX-pend.x, ev.clientY-pend.y) > 5) startDrag(el, getItem(), ev.clientX, ev.clientY); };
+    const mu = ev => { document.removeEventListener('mousemove', mm); document.removeEventListener('mouseup', mu);
+      if (drag) endDrag(ev.clientX, ev.clientY); else if (pend) tapItem(el, getItem()); pend = null; };
+    document.addEventListener('mousemove', mm); document.addEventListener('mouseup', mu);
+  });
+  el.addEventListener('touchstart', e => {
+    const t = e.touches[0];
+    pend = {x:t.clientX, y:t.clientY, lx:t.clientX, ly:t.clientY, moved:false};
+    pend.timer = setTimeout(() => { if (pend && !pend.moved) startDrag(el, getItem(), pend.lx, pend.ly); }, 170);
+  }, {passive:true});
+  el.addEventListener('touchmove', e => {
+    const t = e.touches[0]; if (!pend) return;
+    pend.lx = t.clientX; pend.ly = t.clientY;
+    if (drag){ e.preventDefault(); moveDrag(t.clientX, t.clientY); }
+    else if (Math.hypot(t.clientX-pend.x, t.clientY-pend.y) > 8){ pend.moved = true; clearTimeout(pend.timer); }
+  }, {passive:false});
+  const tend = e => {
+    if (!pend) return; clearTimeout(pend.timer);
+    if (drag){ e.preventDefault(); endDrag(pend.lx, pend.ly); }
+    else if (!pend.moved && e.type === 'touchend'){ e.preventDefault(); tapItem(el, getItem()); }
+    pend = null;
+  };
+  el.addEventListener('touchend', tend, {passive:false});
+  el.addEventListener('touchcancel', tend, {passive:false});
+  el.addEventListener('contextmenu', e => e.preventDefault());
+}
+function tapItem(el, item){
+  document.querySelectorAll('.cell.sel,.cmp.sel,.rchip.sel').forEach(x => x.classList.remove('sel'));
+  if (selected && itemKey(selected) === itemKey(item)){ selected = null; showInfo(null); return; }
+  selected = item; if (item.t === 'el') cellOf[item.s].classList.add('sel'); else el.classList.add('sel');
+  showInfo(item);
+}
+function showInfo(it){
+  const info = $('#info');
+  if (!it){ info.innerHTML = ''; return; }
+  if (it.t === 'el'){
+    const e = EL[it.s], v = valence(it.s);
+    const state = GASES.has(it.s) ? 'gas' : LIQUIDS.has(it.s) ? 'cair' : 'padat';
+    info.innerHTML = `👉 <b>${e.s} · ${e.name}</b> (${e.en}) · No. ${e.z} · ${CATS[e.cat].n} · ${state}${v ? ` · ${v} e⁻ valensi` : ''}. Ketuk labu untuk memasukkan.`;
+  } else info.innerHTML = `👉 <b>${itemLabel(it)} · ${itemName(it)}</b>. Ketuk labu untuk memasukkan.`;
+}
+wrap.addEventListener('click', () => { if (selected) addToChamber(selected); else toast('Seret unsur ke sini, atau ketuk unsur dulu 👆'); });
+
+// =================== CHAMBER ===================
+const cv = $('#chamber'); const ctx = cv.getContext('2d');
+const W = 360; let H = 160;
+const dock = $('#dock');
+function sizeCanvas(){
+  const desk = window.innerWidth >= 900;
+  H = desk ? 220 : (window.innerHeight < 700 ? 130 : 150);
+  cv.style.aspectRatio = `${W}/${H}`;
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  cv.width = W*dpr; cv.height = H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+  document.documentElement.style.setProperty('--dockH', desk ? '0px' : (dock.offsetHeight + 8) + 'px');
+}
+sizeCanvas(); window.addEventListener('resize', sizeCanvas); setTimeout(sizeCanvas, 300);
+const CX = () => W/2, CY = () => H*0.56, BR = () => H*0.4, TR = () => H*0.125;
+let tokens = [], phase = 'idle', phaseT = 0, pending = null, stale = false;
+let parts = [], fxs = [], flash = 0, shake = 0, liquid = '#bfe9ff', liquidTo = null;
+const found = new Set(); const inventory = new Map();
+
+function mkToken(item){
+  const a = rnd(-.8, .8);
+  return {item, label:itemLabel(item), col:itemColor(item), x:CX()+Math.sin(a)*BR()*.4, y:CY()-BR()*1.5, vx:rnd(-30,30), vy:120, r:TR(), scale:0, morph:null, mood:'happy', moodT:0, blink:rnd(1,4)};
+}
+function addToChamber(item){
+  if (phase === 'merging') return;
+  tokens = tokens.filter(t => t.leaving === undefined);
+  if (tokens.length >= 2 || stale){ tokens = []; stale = false; liquidTo = '#bfe9ff'; }
+  fxs = fxs.filter(f => f.k !== 'text');
+  tokens.push(mkToken(item));
+  selected = null; document.querySelectorAll('.cell.sel,.cmp.sel').forEach(x => x.classList.remove('sel')); showInfo(null);
+  parts.push({k:'splash', x:CX(), y:CY()-BR()*.1, t:0, life:.5});
+  if (tokens.length === 2){ fxs = []; phase = 'merging'; phaseT = 0; pending = resolve(tokens[0].item, tokens[1].item); tokens.forEach(t => t.mood = 'wow'); }
+  else setRes(`<span class="eqs">${itemLabel(item)} + ?</span><span class="nm">${itemName(item)} masuk labu. Tambah satu lagi!</span>`);
+}
+function clearChamber(silent){ tokens = []; phase = 'idle'; stale = false; parts = []; fxs = []; liquid = '#bfe9ff'; liquidTo = null; if (!silent) setRes('<span class="nm">Labu kosong. Seret 2 unsur ke sini</span>'); }
+$('#clearBtn').onclick = () => clearChamber();
+
+function react(){
+  const r = pending; pending = null;
+  const [a, b] = tokens;
+  if (r.none){
+    a.vx = -170; b.vx = 170; a.vy = -60; b.vy = -60; a.mood = b.mood = 'meh'; a.moodT = b.moodT = 2.5; phase = 'idle';
+    if (a.keep){ stale = false; b.leaving = 1.1; } else stale = true;
+    fxs.push({k:'text', str:'BOING!', t:0, dur:1.2, col:'#8ecbff', size:30});
+    setRes(`<span class="eqs">${a.label} + ${b.label} → 🤷</span><span class="nm">${a.keep ? `Tidak bereaksi. ${a.label} masih di labu, coba yang lain` : 'Tidak bereaksi'}</span>`, true);
+    renderCard({none:true, a, b, msg:r.msg});
+    return;
+  }
+  const p = r.product;
+  const tok = {item:{t:'cmp', id:p.id, f:p.f, name:p.name, col:p.col}, label:p.f, col:p.col, x:CX(), y:CY(), vx:0, vy:-40, r:TR()*1.18, scale:0, morph:null, mood:'happy', moodT:0, blink:2};
+  if (r.fx.includes('rust')){ tok.morph = {from:a.col, to:p.col, t:0, dur:2.6}; tok.scale = 1; }
+  if (r.fx.includes('explode') || r.fx.includes('bigboom')){ tok.mood = 'dizzy'; tok.moodT = 2.2; }
+  else { tok.mood = 'yay'; tok.moodT = 1.6; }
+  tok.keep = true; tokens = [tok]; phase = 'idle'; stale = false;
+  liquidTo = mix('#bfe9ff', p.col, .35);
+  runFx(r);
+  if (!C[p.id]) C[p.id] = {f:p.f, name:p.name, col:p.col};
+  const isNew = !found.has(r.key); found.add(r.key);
+  if (!inventory.has(p.id)){ inventory.set(p.id, p); renderInv(); }
+  $('#counter').textContent = `${found.size} reaksi`;
+  setRes(`<span class="eqs">${a.label} + ${b.label} → ${p.f}</span><span class="nm"><b>${p.name}</b>${isNew ? ' · baru! ✨' : ''} · tambah zat lain untuk lanjut</span>`, true);
+  renderCard({r, a, b});
+}
+
+// =================== CARTOON FX ===================
+const WORD = {explode:'DUAR!', bigboom:'DUAAARR!!', fire:'WUSSH!', flash:'SILAU!', spark:'CRETEK!', smoke:'PUFF!', gas:'FSSS…', fizz:'CESSS!', glow:'MEMBARA!', color:'TADA!', molecule:'KLIK!', alloy:'CLING!'};
+const WORD_COL = {explode:'#ffd23f', bigboom:'#ffd23f', fire:'#ff8a3d', flash:'#fff176', spark:'#ffd23f', smoke:'#e8e8f0', gas:'#d9f2ff', fizz:'#bfe9ff', glow:'#ff8a3d', color:'#ff9de2', molecule:'#8ecbff', alloy:'#e6edf3'};
+function runFx(r){
+  const flameCol = r.flame || '#ff8a3d';
+  const words = r.fx.filter(f => WORD[f]);
+  if (words.length && !r.fx.includes('pop')) fxs.push({k:'text', str:WORD[words[0]], t:0, dur:1.4, col:WORD_COL[words[0]], size: words[0]==='bigboom' ? 44 : 36, delay: 0});
+  for (const f of r.fx){
+    if (f === 'explode' || f === 'bigboom'){
+      const big = f === 'bigboom' ? 1.45 : 1;
+      flash = .85; shake = 1.1*big;
+      fxs.push({k:'burst', t:0, dur:.95, R:H*.62*big, spikes:14});
+      parts.push({k:'ring', x:CX(), y:CY(), r:12, vr:420*big, t:0, life:.45});
+      for (let i = 0; i < 22*big; i++){ const a = Math.random()*6.283, s = rnd(160, 380)*big; parts.push({k:'debris', x:CX(), y:CY(), vx:Math.cos(a)*s, vy:Math.sin(a)*s-60, rot:rnd(0,6), vr:rnd(-12,12), t:0, life:rnd(.7,1.2), sz:rnd(4,8), col:['#ffd23f','#ff8a3d','#ff4f4f','#ffffff'][i%4]}); }
+      for (let i = 0; i < 7*big; i++) parts.push({k:'cloud', x:CX()+rnd(-40,40)*big, y:CY()+rnd(-20,20), vx:rnd(-40,40), vy:rnd(-55,-20), t:-.25, life:rnd(1.3,1.9), sz:rnd(14,22)*big, col:'#f2f0f7'});
+    }
+    if (f === 'pop'){ fxs.push({k:'later', t:0, dur:.9, run:() => { flash = .5; shake = .6; fxs.push({k:'burst', t:0, dur:.6, R:H*.38, spikes:10}); fxs.push({k:'text', str:'POP!', t:0, dur:1.1, col:'#ffd23f', size:34}); for (let i = 0; i < 10; i++){ const a = Math.random()*6.283; parts.push({k:'debris', x:CX(), y:CY(), vx:Math.cos(a)*220, vy:Math.sin(a)*220-60, rot:0, vr:rnd(-10,10), t:0, life:.8, sz:rnd(3,6), col:'#ffd23f'}); } }}); }
+    if (f === 'fire'){ fxs.push({k:'flame', t:0, dur:2.1, col:flameCol}); fxs.push({k:'emit', t:0, dur:2, rate:14, make:() => ({k:'ember', x:CX()+rnd(-30,30), y:CY()+rnd(-10,10), vx:rnd(-20,20), vy:rnd(-120,-70), t:0, life:rnd(.5,.9), sz:rnd(2,3.5), col:flameCol})}); }
+    if (f === 'flash'){ flash = 1; fxs.push({k:'rays', t:0, dur:1.3, col:'#fff176', n:16, hold:true}); fxs.push({k:'flashHold', t:0, dur:1}); }
+    if (f === 'spark') fxs.push({k:'emit', t:0, dur:1.3, rate:26, make:() => { const a = rnd(-Math.PI*.95, -Math.PI*.05), s = rnd(150,300); return {k:'star', x:CX(), y:CY(), vx:Math.cos(a)*s, vy:Math.sin(a)*s, t:0, life:rnd(.4,.8), sz:rnd(4,7), col:Math.random()<.5 ? '#ffd23f' : '#fff6a8', grav:true}; }});
+    if (f === 'smoke') fxs.push({k:'emit', t:0, dur:2.2, rate:7, delay:.15, make:() => ({k:'cloud', x:CX()+rnd(-28,28), y:CY()+rnd(-10,8), vx:rnd(-20,20), vy:rnd(-50,-22), t:0, life:rnd(1.4,2.2), sz:rnd(10,16), col:r.smoke || '#efeff5'})});
+    if (f === 'gas'){ fxs.push({k:'emit', t:0, dur:2, rate:14, make:() => bubble()}); fxs.push({k:'emit', t:0, dur:2, rate:5, make:() => ({k:'cloud', x:CX()+rnd(-30,30), y:CY()-BR()*.4, vx:rnd(-15,15), vy:rnd(-40,-18), t:0, life:rnd(1.5,2.3), sz:rnd(12,18), col:r.gas || '#e8f4ff'})}); }
+    if (f === 'fizz') fxs.push({k:'emit', t:0, dur:2.4, rate:26, make:() => bubble()});
+    if (f === 'glow') fxs.push({k:'rays', t:0, dur:2.6, col:r.glow || flameCol, n:12});
+    if (f === 'color' || f === 'molecule') fxs.push({k:'emit', t:0, dur:1.1, rate:18, make:() => sparkle('#ffffff')});
+    if (f === 'alloy'){ fxs.push({k:'emit', t:0, dur:1.5, rate:20, make:() => sparkle('#fff6a8')}); fxs.push({k:'rays', t:0, dur:1.4, col:'#e6edf3', n:10}); }
+    if (f === 'rust') fxs.push({k:'text', str:'⏩ dipercepat', t:0, dur:2.6, col:'#ffe0b3', size:15, small:true});
+  }
+}
+function bubble(){ return {k:'bubble', x:CX()+rnd(-BR()*.6, BR()*.6), y:CY()+BR()*.75, vx:0, vy:rnd(-80,-40), t:0, life:rnd(.8,1.5), sz:rnd(3,6.5), w:Math.random()*6}; }
+function sparkle(col){ const a = Math.random()*6.283, d = rnd(TR()*1.2, TR()*2.6); return {k:'star', x:CX()+Math.cos(a)*d, y:CY()+Math.sin(a)*d, vx:0, vy:-10, t:0, life:rnd(.5,.9), sz:rnd(5,8), col}; }
+function stepFx(dt){
+  for (const f of fxs){
+    f.t += dt;
+    if (f.delay && f.t < f.delay) continue;
+    if (f.k === 'emit'){ f.acc = (f.acc||0) + f.rate*dt; while (f.acc >= 1){ f.acc -= 1; parts.push(f.make()); } }
+    if (f.k === 'flashHold' && f.t < f.dur) flash = Math.max(flash, .55 + Math.random()*.15);
+    if (f.k === 'later' && f.t >= f.dur && !f.done){ f.done = true; f.run(); }
+  }
+  fxs = fxs.filter(f => f.t < f.dur + (f.delay||0) || (f.k === 'later' && !f.done));
+  for (const p of parts){
+    p.t += dt; if (p.t < 0) continue;
+    if (p.k === 'debris'){ p.vy += 420*dt; p.rot += p.vr*dt; }
+    if (p.k === 'star' && p.grav) p.vy += 300*dt;
+    if (p.k === 'cloud'){ p.sz += 10*dt; p.vx *= (1-.8*dt); }
+    if (p.k === 'bubble') p.w += dt*6;
+    if (p.k === 'ring') p.r += p.vr*dt;
+    p.x += (p.vx||0)*dt; p.y += (p.vy||0)*dt;
+  }
+  parts = parts.filter(p => p.t < p.life);
+  flash = Math.max(0, flash - dt*2.6); shake = Math.max(0, shake - dt*2.4);
+  if (liquidTo){ liquid = mix(liquid, liquidTo, Math.min(1, dt*2)); }
+}
+
+// =================== RENDER ===================
+let last = performance.now(), clock = 0;
+function frame(now){
+  const dt = Math.min(.05, (now-last)/1000); last = now; clock += dt;
+  const cx = CX(), cy = CY(), br = BR();
+  tokens = tokens.filter(t => !(t.leaving !== undefined && t.leaving <= 0));
+  for (const t of tokens){
+    if (t.leaving !== undefined){ t.leaving -= dt; if (t.leaving < .35) t.scale = Math.max(0, t.leaving/.35); }
+    else t.scale = Math.min(1, t.scale + dt*3.5);
+    t.r += (( t.item.t === 'cmp' && tokens.length === 1 ? TR()*1.18 : TR()) - t.r)*Math.min(1, dt*4);
+    if (t.moodT > 0){ t.moodT -= dt; if (t.moodT <= 0 && t.mood !== 'wow') t.mood = 'happy'; }
+    t.blink -= dt; if (t.blink < -.12) t.blink = rnd(2,5);
+    if (phase === 'merging'){
+      t.x += (cx - t.x)*Math.min(1, dt*6); t.y += (cy - t.y)*Math.min(1, dt*6);
+    } else {
+      // float on the liquid: soft spring toward the surface line
+      const surf = cy + br*.05;
+      t.vy += (surf - t.y)*3*dt; t.vx *= (1-1.4*dt); t.vy *= (1-1.6*dt);
+      t.vx += Math.sin(clock*1.3 + t.r*3)*6*dt;
+      t.x += t.vx*dt; t.y += t.vy*dt;
+      const dx = t.x-cx, dy = t.y-cy, d = Math.hypot(dx,dy), lim = br - t.r - 3;
+      if (d > lim){ const nx = dx/d, ny = dy/d; t.x = cx+nx*lim; t.y = cy+ny*lim; const dot = t.vx*nx+t.vy*ny; t.vx -= 1.7*dot*nx; t.vy -= 1.7*dot*ny; }
+    }
+    if (t.morph){ t.morph.t += dt; const k = Math.min(1, t.morph.t/t.morph.dur); t.col = mix(t.morph.from, t.morph.to, k); if (k >= 1) t.morph = null; }
+  }
+  if (tokens.length === 2 && phase !== 'merging'){
+    const [a,b] = tokens, dx = b.x-a.x, dy = b.y-a.y, d = Math.hypot(dx,dy)||1, min = a.r+b.r+2;
+    if (d < min){ const push = (min-d)/2, nx = dx/d, ny = dy/d; a.x -= nx*push; a.y -= ny*push; b.x += nx*push; b.y += ny*push; }
+  }
+  if (phase === 'merging'){ phaseT += dt; if (phaseT > .6) react(); }
+  stepFx(dt);
+  draw();
+  requestAnimationFrame(frame);
+}
+
+function ink(lw){ ctx.strokeStyle = INK; ctx.lineWidth = lw; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; }
+function drawCloud(x, y, s, col, a){
+  ctx.save(); ctx.globalAlpha = a;
+  const blobs = [[0,0,1],[-.8,.25,.7],[.8,.25,.72],[-.35,-.45,.68],[.4,-.4,.6]];
+  ctx.beginPath(); for (const [ox,oy,r] of blobs){ ctx.moveTo(x+ox*s+r*s, y+oy*s); ctx.arc(x+ox*s, y+oy*s, r*s, 0, 6.283); }
+  ink(2.5); ctx.stroke(); ctx.fillStyle = col; ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,.55)'; ctx.beginPath(); ctx.arc(x-.3*s, y-.35*s, .28*s, 0, 6.283); ctx.fill();
+  ctx.restore();
+}
+function drawStar(x, y, s, col, rot=0){
+  ctx.save(); ctx.translate(x,y); ctx.rotate(rot);
+  ctx.beginPath(); for (let i = 0; i < 8; i++){ const r = i%2 ? s*.38 : s; const a = i*Math.PI/4; ctx.lineTo(Math.cos(a)*r, Math.sin(a)*r); } ctx.closePath();
+  ctx.fillStyle = col; ctx.fill(); ink(1.8); ctx.stroke(); ctx.restore();
+}
+function burstPath(R, spikes, seed){
+  ctx.beginPath();
+  for (let i = 0; i <= spikes*2; i++){
+    const a = i/(spikes*2)*Math.PI*2 + seed, r = i%2 ? R*.55 : R*(0.86 + 0.14*Math.sin(i*2.3+seed*5));
+    const x = Math.cos(a)*r, y = Math.sin(a)*r; i ? ctx.lineTo(x,y) : ctx.moveTo(x,y);
+  }
+  ctx.closePath();
+}
+function flameTongue(x, base, w, h, wob, col){
+  ctx.beginPath();
+  ctx.moveTo(x-w, base);
+  ctx.bezierCurveTo(x-w*1.1, base-h*.45, x-w*.2+wob, base-h*.65, x+wob*1.4, base-h);
+  ctx.bezierCurveTo(x+w*.35+wob, base-h*.6, x+w*1.15, base-h*.4, x+w, base);
+  ctx.arc(x, base, w, 0, Math.PI, false);
+  ctx.closePath();
+  ctx.fillStyle = col; ctx.fill(); ink(2.5); ctx.stroke();
+}
+function drawFace(t, r){
+  const look = tokens.length === 2 ? Math.sign((tokens[0] === t ? tokens[1].x : tokens[0].x) - t.x) : Math.sin(clock*.8)*.6;
+  const ey = t.y - r*.3, ex = r*.33, er = r*.2;
+  if (t.mood === 'dizzy'){
+    ink(2.2); for (const s of [-1,1]){ const x0 = t.x + s*ex; ctx.beginPath(); ctx.moveTo(x0-er*.8, ey-er*.8); ctx.lineTo(x0+er*.8, ey+er*.8); ctx.moveTo(x0+er*.8, ey-er*.8); ctx.lineTo(x0-er*.8, ey+er*.8); ctx.stroke(); }
+    for (let i = 0; i < 3; i++){ const a = clock*4 + i*2.09; drawStar(t.x + Math.cos(a)*r*.9, t.y - r*1.15 + Math.sin(a)*r*.25, 4, '#ffd23f', a); }
+    return;
+  }
+  if (t.blink < 0 || t.mood === 'yay'){
+    ink(2.2); for (const s of [-1,1]){ ctx.beginPath(); ctx.arc(t.x + s*ex, ey+er*.3, er*.75, Math.PI*1.1, Math.PI*1.9); ctx.stroke(); }
+    return;
+  }
+  for (const s of [-1,1]){
+    const x0 = t.x + s*ex;
+    ctx.beginPath(); ctx.arc(x0, ey, er, 0, 6.283); ctx.fillStyle = '#fff'; ctx.fill(); ink(1.8); ctx.stroke();
+    const pr = t.mood === 'wow' ? er*.42 : er*.55;
+    ctx.beginPath(); ctx.arc(x0 + look*er*.35, ey + (t.mood === 'meh' ? er*.25 : 0), pr, 0, 6.283); ctx.fillStyle = INK; ctx.fill();
+  }
+  if (t.mood === 'meh'){ ink(2); ctx.beginPath(); ctx.moveTo(t.x-ex-er, ey-er*1.4); ctx.lineTo(t.x-ex+er, ey-er*1.1); ctx.moveTo(t.x+ex+er, ey-er*1.4); ctx.lineTo(t.x+ex-er, ey-er*1.1); ctx.stroke(); }
+}
+function draw(){
+  ctx.save();
+  ctx.clearRect(0,0,W,H);
+  if (shake > 0) ctx.translate(rnd(-1,1)*shake*8, rnd(-1,1)*shake*8);
+  const cx = CX(), cy = CY(), br = BR();
+  // backdrop: lab wall + bench
+  ctx.fillStyle = '#eaf7ff'; ctx.fillRect(-10,-10,W+20,H+20);
+  ctx.fillStyle = 'rgba(63,169,255,.08)'; for (let x = -10; x < W+10; x += 24) ctx.fillRect(x, -10, 12, H+20);
+  ctx.fillStyle = '#ffd9a8'; ctx.fillRect(-10, cy+br-2, W+20, H); ink(3); ctx.beginPath(); ctx.moveTo(-10, cy+br-2); ctx.lineTo(W+10, cy+br-2); ctx.stroke();
+  // rays (behind flask)
+  for (const f of fxs) if (f.k === 'rays'){ const k = f.t/f.dur, a = Math.sin(Math.PI*Math.min(1,k)); ctx.save(); ctx.translate(cx, cy); ctx.rotate(clock*.6); ctx.globalAlpha = .85*a;
+    for (let i = 0; i < f.n; i++){ ctx.rotate(Math.PI*2/f.n); ctx.beginPath(); ctx.moveTo(0, -br*.3); ctx.lineTo(-10, -br*1.9); ctx.lineTo(10, -br*1.9); ctx.closePath(); ctx.fillStyle = i%2 ? f.col : '#ffffff'; ctx.fill(); } ctx.restore(); }
+  // flask body + liquid
+  const neckW = br*.5, neckTop = cy - br*1.38, ang = Math.asin((neckW/2)/br);
+  const flaskPath = () => { ctx.beginPath(); ctx.moveTo(cx-neckW/2, neckTop); ctx.lineTo(cx-neckW/2, cy - Math.cos(ang)*br); ctx.arc(cx, cy, br, -Math.PI/2 - ang, -Math.PI/2 + ang, true); ctx.lineTo(cx+neckW/2, neckTop); };
+  ctx.save(); flaskPath(); ctx.closePath(); ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fill(); ctx.clip();
+  const surf = cy + br*.12;
+  ctx.beginPath(); ctx.moveTo(cx-br-5, surf);
+  for (let x = -br-5; x <= br+5; x += 6) ctx.lineTo(cx+x, surf + Math.sin(x*.08 + clock*3)*2.2);
+  ctx.lineTo(cx+br+5, cy+br+5); ctx.lineTo(cx-br-5, cy+br+5); ctx.closePath();
+  ctx.fillStyle = liquid; ctx.fill(); ink(2.5); ctx.stroke();
+  ctx.restore();
+  // bubbles & clouds behind tokens
+  for (const p of parts){ if (p.t < 0) continue; const k = p.t/p.life;
+    if (p.k === 'bubble'){ ctx.beginPath(); ctx.arc(p.x + Math.sin(p.w)*2, p.y, p.sz, 0, 6.283); ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.fill(); ink(1.8); ctx.stroke(); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(p.x + Math.sin(p.w)*2 - p.sz*.35, p.y - p.sz*.35, p.sz*.25, 0, 6.283); ctx.fill(); }
+    if (p.k === 'splash'){ ink(2.5); for (const s of [-1,1]){ ctx.beginPath(); ctx.arc(p.x + s*(10+k*18), p.y - 8 - Math.sin(k*Math.PI)*14, 3.5*(1-k)+1, 0, 6.283); ctx.fillStyle = '#bfe9ff'; ctx.fill(); ctx.stroke(); } }
+  }
+  // flame (behind token so the token sits "in" the fire)
+  for (const f of fxs) if (f.k === 'flame'){
+    const k = f.t/f.dur, grow = Math.min(1, f.t*5), fade = k > .8 ? 1-(k-.8)/.2 : 1, s = grow*fade;
+    if (s <= 0) continue;
+    const base = cy + TR()*.6;
+    const tongues = [[-1, .62], [1, .66], [0, 1]];
+    for (const [o, hh] of tongues){
+      const wob = Math.sin(clock*14 + o*2)*4;
+      const hgt = br*1.35*hh*s*(1 + Math.sin(clock*11+o)*.08);
+      flameTongue(cx + o*br*.38, base, br*.2*s + 4, hgt, wob, f.col);
+      flameTongue(cx + o*br*.38, base, (br*.2*s + 4)*.55, hgt*.6, wob*.7, '#ffe680');
+    }
+  }
+  // tokens
+  for (const t of tokens){
+    const r = t.r * (t.leaving !== undefined ? t.scale : t.scale < 1 ? easeOutBack(t.scale) : 1);
+    if (r <= .5) continue;
+    const squish = 1 + Math.sin(clock*5 + t.r)*.03;
+    ctx.save(); ctx.translate(t.x, t.y); ctx.scale(1/squish, squish); ctx.translate(-t.x, -t.y);
+    ctx.beginPath(); ctx.ellipse(t.x, t.y + r*.95, r*.75, r*.18, 0, 0, 6.283); ctx.fillStyle = 'rgba(43,33,64,.15)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(t.x, t.y, r, 0, 6.283); ctx.fillStyle = t.col; ctx.fill(); ink(3); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,.6)'; ctx.beginPath(); ctx.ellipse(t.x - r*.45, t.y - r*.5, r*.22, r*.13, -.6, 0, 6.283); ctx.fill();
+    drawFace(t, r);
+    ctx.fillStyle = INK; const L = t.label.length;
+    ctx.font = `700 ${Math.round(r*(L <= 2 ? .62 : L <= 4 ? .5 : L <= 6 ? .4 : .33))}px Fredoka, sans-serif`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(t.label, t.x, t.y + r*.38);
+    ctx.restore();
+  }
+  if (tokens.length === 2 && phase === 'merging' && pending?.fx?.includes('molecule')){
+    ink(5); ctx.beginPath(); ctx.moveTo(tokens[0].x, tokens[0].y); ctx.lineTo(tokens[1].x, tokens[1].y); ctx.stroke();
+  }
+  // flask outline on top
+  flaskPath(); ink(3.5); ctx.stroke();
+  ink(3.5); ctx.beginPath(); ctx.ellipse(cx, neckTop, neckW/2+3, 4, 0, 0, 6.283); ctx.fillStyle = '#fff'; ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,255,255,.95)'; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.beginPath(); ctx.arc(cx, cy, br-8, Math.PI*1.12, Math.PI*1.4); ctx.stroke();
+  if (!tokens.length && !parts.length && !fxs.length){
+    ctx.fillStyle = 'rgba(43,33,64,.55)'; ctx.font = '600 13px Fredoka, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('Seret unsur ke sini 👇', cx, cy - br*.35);
+  }
+  // burst
+  for (const f of fxs) if (f.k === 'burst'){
+    const k = f.t/f.dur, s = k < .14 ? easeOutBack(k/.14) : Math.max(0, 1 - Math.max(0, k-.45)/.55);
+    if (s <= 0) continue;
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate(f.t*.6); ctx.scale(s, s);
+    burstPath(f.R, f.spikes, 0); ctx.fillStyle = '#ff4f4f'; ctx.fill(); ink(3.5/Math.max(.3,s)); ctx.stroke();
+    burstPath(f.R*.72, f.spikes, .3); ctx.fillStyle = '#ff9a3c'; ctx.fill(); ink(3/Math.max(.3,s)); ctx.stroke();
+    burstPath(f.R*.45, f.spikes-3, .7); ctx.fillStyle = '#ffe14d'; ctx.fill(); ink(2.5/Math.max(.3,s)); ctx.stroke();
+    ctx.restore();
+  }
+  // particles over everything
+  for (const p of parts){ if (p.t < 0) continue; const k = p.t/p.life;
+    if (p.k === 'cloud') drawCloud(p.x, p.y, p.sz, p.col, Math.min(1, (1-k)*1.6));
+    else if (p.k === 'debris') drawStar(p.x, p.y, p.sz*(1-k*.4), p.col, p.rot);
+    else if (p.k === 'star'){ const s = p.sz*Math.sin(Math.PI*Math.min(1,k)); if (s > .5) drawStar(p.x, p.y, s, p.col, k*2); }
+    else if (p.k === 'ember'){ ctx.beginPath(); ctx.arc(p.x, p.y, p.sz*(1-k), 0, 6.283); ctx.fillStyle = p.col; ctx.fill(); ink(1.5); ctx.stroke(); }
+    else if (p.k === 'ring'){ ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.283); ink(5*(1-k)+1); ctx.stroke(); }
+  }
+  // comic words
+  for (const f of fxs) if (f.k === 'text'){
+    const k = f.t/f.dur, a = k > .75 ? 1-(k-.75)/.25 : 1;
+    ctx.save(); ctx.globalAlpha = Math.max(0,a); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    if (f.small){ ctx.font = `600 ${f.size}px Fredoka, sans-serif`; ctx.lineWidth = 4; ctx.strokeStyle = INK; ctx.strokeText(f.str, cx, cy - br*1.15); ctx.fillStyle = f.col; ctx.fillText(f.str, cx, cy - br*1.15); }
+    else {
+      const pop = f.t < .18 ? easeOutBack(f.t/.18) : 1 + Math.sin(f.t*9)*.03;
+      ctx.translate(cx, Math.max(f.size*.6, cy - br*.95)); ctx.rotate(-.1); ctx.scale(pop, pop);
+      ctx.font = `${f.size}px Bangers, Fredoka, sans-serif`;
+      ctx.lineWidth = 9; ctx.strokeStyle = INK; ctx.strokeText(f.str, 3, 4);
+      ctx.fillStyle = INK; ctx.fillText(f.str, 3, 4);
+      ctx.lineWidth = 7; ctx.strokeText(f.str, 0, 0); ctx.fillStyle = f.col; ctx.fillText(f.str, 0, 0);
+    }
+    ctx.restore();
+  }
+  ctx.restore();
+  if (flash > 0){ ctx.fillStyle = `rgba(255,255,240,${Math.min(.9, flash)})`; ctx.fillRect(0,0,W,H); }
+}
+const easeOutBack = x => { const c1 = 1.70158, c3 = c1+1; return 1 + c3*Math.pow(x-1,3) + c1*Math.pow(x-1,2); };
+
+// =================== STRUCTURE & BONDS ===================
+const ring = (n, r=1, start=-Math.PI/2) => Array.from({length:n}, (_,i) => [Math.cos(start+i*2*Math.PI/n)*r, Math.sin(start+i*2*Math.PI/n)*r]);
+const STRUCT = {
+  H2O:{at:[['O',0,0],['H',-.85,.6],['H',.85,.6]], b:[[0,1,1],[0,2,1]], txt:'H–O–H', note:'Bentuknya bengkok (seperti huruf V) karena O masih punya 2 pasang elektron bebas.'},
+  CO2:{at:[['O',-1.15,0],['C',0,0],['O',1.15,0]], b:[[0,1,2],[1,2,2]], txt:'O=C=O', note:'Bentuknya lurus. C memakai 4 elektronnya: 2 pasang ke tiap O.'},
+  HCl:{at:[['H',-.55,0],['Cl',.6,0]], b:[[0,1,1]], txt:'H–Cl'}, HF:{at:[['H',-.55,0],['F',.6,0]], b:[[0,1,1]], txt:'H–F'},
+  HBr:{at:[['H',-.55,0],['Br',.6,0]], b:[[0,1,1]], txt:'H–Br'}, HI:{at:[['H',-.55,0],['I',.6,0]], b:[[0,1,1]], txt:'H–I'},
+  NH3:{at:[['N',0,0],['H',-.95,.6],['H',.95,.6],['H',0,-1.05]], b:[[0,1,1],[0,2,1],[0,3,1]], txt:'NH₃ (3 × N–H)', note:'N masih punya 1 pasang elektron bebas, jadi bentuknya piramida.'},
+  CH4:{at:[['C',0,0],['H',-1.05,0],['H',1.05,0],['H',0,-1.05],['H',0,1.05]], b:[[0,1,1],[0,2,1],[0,3,1],[0,4,1]], txt:'CH₄ (4 × C–H)', note:'Aslinya 3D berbentuk tetrahedron (seperti piramida segitiga).'},
+  SO2:{at:[['O',-1.05,.55],['S',0,0],['O',1.05,.55]], b:[[0,1,2],[1,2,2]], txt:'O=S=O', note:'Bentuknya bengkok karena S masih punya sepasang elektron bebas.'},
+  NO2:{at:[['O',-1.05,.55],['N',0,0],['O',1.05,.55]], b:[[0,1,2],[1,2,1]], txt:'O=N–O', note:'NO₂ punya 1 elektron tak berpasangan (radikal). Sebenarnya kedua ikatannya setara karena resonansi: rangkap dua “berpindah-pindah”.'},
+  H2S:{at:[['S',0,0],['H',-.85,.6],['H',.85,.6]], b:[[0,1,1],[0,2,1]], txt:'H–S–H'},
+  SF6:{at:[['S',0,0],...ring(6,1.1).map(([x,y])=>['F',x,y])], b:[1,2,3,4,5,6].map(i=>[0,i,1]), txt:'SF₆ (6 × S–F)', note:'Aslinya 3D berbentuk oktahedron. S bisa punya lebih dari 8 elektron di kulit terluarnya.'},
+  PCl3:{at:[['P',0,0],['Cl',-1.05,.6],['Cl',1.05,.6],['Cl',0,-1.15]], b:[[0,1,1],[0,2,1],[0,3,1]], txt:'PCl₃ (3 × P–Cl)'},
+  H2CO3:{at:[['C',0,0],['O',0,-1.1],['O',-1.05,.6],['O',1.05,.6],['H',-2,.1],['H',2,.1]], b:[[0,1,2],[0,2,1],[0,3,1],[2,4,1],[3,5,1]], txt:'HO–C(=O)–OH'},
+  H2SO3:{at:[['S',0,0],['O',0,-1.1],['O',-1.05,.6],['O',1.05,.6],['H',-2,.1],['H',2,.1]], b:[[0,1,2],[0,2,1],[0,3,1],[2,4,1],[3,5,1]], txt:'HO–S(=O)–OH'},
+  HNO3:{at:[['N',0,0,'+'],['O',0,-1.1],['O',-1.05,.6],['O',1.05,.6,'−'],['H',-2,.1]], b:[[0,1,2],[0,2,1],[0,3,1],[2,4,1]], txt:'HO–N(=O)–O', note:'Ikatan N=O dan N–O⁻ sebenarnya beresonansi (bergantian), jadi panjangnya hampir sama.'},
+  XeF2:{at:[['F',-1.15,0],['Xe',0,0],['F',1.15,0]], b:[[0,1,1],[1,2,1]], txt:'F–Xe–F', note:'Xe masih punya 3 pasang elektron bebas di sekelilingnya.'},
+  SiO2:{at:[['Si',0,0],['O',-1.1,0],['O',1.1,0],['O',0,-1.1],['O',0,1.1]], b:[[0,1,1],[0,2,1],[0,3,1],[0,4,1]], txt:'…–O–Si–O–…', note:'Ini cuma potongan kecil. SiO₂ adalah jaringan raksasa: tiap Si terikat 4 O dan tiap O menyambung 2 Si. Tidak ada molekul SiO₂ yang terpisah.'},
+  P4O10:{txt:'P₄O₁₀', note:'Strukturnya seperti sangkar 3D: 4 atom P dihubungkan jembatan P–O–P (ikatan tunggal), dan tiap P juga punya 1 ikatan rangkap P=O.', counts:{1:12, 2:4}},
+};
+const DI_ORDER = {H:1,N:3,O:2,F:1,Cl:1,Br:1,I:1};
+for (const [e,o] of Object.entries(DI_ORDER)) STRUCT[e+'2'] = {at:[[e,-.62,0],[e,.62,0]], b:[[0,1,o]], txt:`${e}${['','–','=','≡'][o]}${e}`,
+  note: o === 3 ? 'Ikatan rangkap tiga ini sangat kuat, makanya gas nitrogen di udara sangat sulit bereaksi.' : o === 2 ? 'Tiap atom O butuh 2 elektron lagi, jadi mereka berbagi 2 pasang.' : 'Tiap atom butuh 1 elektron lagi, jadi cukup berbagi 1 pasang.'};
+const ION = {
+  NaCl:[['Na',1,1],['Cl',-1,1]], NaOH:[['Na',1,1],['OH',-1,1]], KOH:[['K',1,1],['OH',-1,1]], LiOH:[['Li',1,1],['OH',-1,1]],
+  RbOH:[['Rb',1,1],['OH',-1,1]], CsOH:[['Cs',1,1],['OH',-1,1]], CaOH2:[['Ca',2,1],['OH',-1,2]], MgO:[['Mg',2,1],['O',-2,1]],
+  Fe2O3:[['Fe',3,2],['O',-2,3]], FeS:[['Fe',2,1],['S',-2,1]], Al2O3:[['Al',3,2],['O',-2,3]], CuO:[['Cu',2,1],['O',-2,1]],
+  ZnS:[['Zn',2,1],['S',-2,1]], CaO:[['Ca',2,1],['O',-2,1]], Ag2S:[['Ag',1,2],['S',-2,1]], Li3N:[['Li',1,3],['N',-3,1]],
+  FeCl3:[['Fe',3,1],['Cl',-1,3]], AlBr3:[['Al',3,1],['Br',-1,3]], AlI3:[['Al',3,1],['I',-1,3]], HgS:[['Hg',2,1],['S',-2,1]],
+  NH4Cl:[['NH4',1,1],['Cl',-1,1]],
+};
+const SUP = q => { const n = Math.abs(q), s = q > 0 ? '+' : '−'; return (n > 1 ? n : '') + s; };
+const subDigits = s => s.replace(/\d/g, d => '₀₁₂₃₄₅₆₇₈₉'[d]);
+const BOND = {1:['–','ikatan tunggal','1 pasang elektron dipakai bersama'],2:['=','ikatan rangkap dua','2 pasang elektron dipakai bersama'],3:['≡','ikatan rangkap tiga','3 pasang elektron dipakai bersama']};
+function legendHTML(used, ionic){
+  return `<div class="legend-b">${[1,2,3].map(o => `<span class="ln ${used.has(o) ? 'on' : ''}">${BOND[o][0]}</span><span><b>${BOND[o][1]}</b>: ${BOND[o][2]}</span>`).join('')}
+    <span class="ln ${ionic ? 'on' : ''}">⁺⁻</span><span><b>ikatan ion</b>: elektron <i>dipindahkan</i>, bukan dibagi, jadi <b>tidak pakai garis</b></span></div>`;
+}
+function structSVG(st){
+  const U = 46, R = 16, pad = 26;
+  const xs = st.at.map(a => a[1]*U), ys = st.at.map(a => a[2]*U);
+  const minX = Math.min(...xs)-R-pad, maxX = Math.max(...xs)+R+pad, minY = Math.min(...ys)-R-pad, maxY = Math.max(...ys)+R+pad;
+  let s = `<svg viewBox="${minX} ${minY} ${maxX-minX} ${maxY-minY}" width="${Math.min(320, maxX-minX)}">`;
+  for (const [i,j,o] of st.b){
+    const x1 = xs[i], y1 = ys[i], x2 = xs[j], y2 = ys[j], L = Math.hypot(x2-x1, y2-y1), nx = -(y2-y1)/L, ny = (x2-x1)/L;
+    const offs = o === 1 ? [0] : o === 2 ? [-3.5, 3.5] : [-6, 0, 6];
+    for (const k of offs) s += `<line x1="${x1+nx*k}" y1="${y1+ny*k}" x2="${x2+nx*k}" y2="${y2+ny*k}" stroke="${INK}" stroke-width="3" stroke-linecap="round"/>`;
+  }
+  st.at.forEach(([e,,,ch], i) => {
+    const col = EL[e] ? CATS[EL[e].cat].c : '#fff', x = xs[i], y = ys[i];
+    s += `<circle cx="${x}" cy="${y}" r="${R}" fill="${col}" stroke="${INK}" stroke-width="3"/>`;
+    s += `<text x="${x}" y="${y+1}" text-anchor="middle" dominant-baseline="middle" font-family="Fredoka, sans-serif" font-weight="700" font-size="${e.length > 1 ? 13 : 15}" fill="${INK}">${e}</text>`;
+    if (ch) s += `<circle cx="${x+R*.85}" cy="${y-R*.85}" r="8" fill="#fff" stroke="${INK}" stroke-width="2"/><text x="${x+R*.85}" y="${y-R*.85+1}" text-anchor="middle" dominant-baseline="middle" font-family="Fredoka" font-weight="700" font-size="12" fill="${INK}">${ch}</text>`;
+  });
+  return s + '</svg>';
+}
+function structureHTML(r, p){
+  const st = STRUCT[p.id];
+  if (st){
+    const counts = st.counts || st.b.reduce((m,[,,o]) => (m[o] = (m[o]||0)+1, m), {});
+    const used = new Set(Object.keys(counts).map(Number));
+    const parts = Object.entries(counts).map(([o,n]) => `${n} ${BOND[o][1]} (${BOND[o][0]})`).join(' dan ');
+    return `<div class="sub">🔗 Struktur & ikatan</div><div class="struct">${st.at ? structSVG(st) : ''}<div class="sform">${st.txt}</div></div>
+      <p class="txt" style="margin-top:8px">Ini <b>ikatan kovalen</b>: atom-atomnya <b>berbagi</b> pasangan elektron, dan tiap pasang digambar sebagai satu garis. ${p.f} punya ${parts}.${st.note ? ' ' + st.note : ''}</p>
+      ${legendHTML(used, false)}`;
+  }
+  const ions = ION[p.id] || r.ions;
+  if (ions){
+    const chip = ([e,q,n]) => `${n > 1 ? `<span class="times">${n} ×</span>` : ''}<span class="ion ${q > 0 ? 'pos' : 'neg'}" style="background:${EL[e] ? CATS[EL[e].cat].c : (q > 0 ? '#ffbfbf' : '#bfe0ff')}">${subDigits(e)}<sup>${SUP(q)}</sup></span>`;
+    const check = ions.map(([,q,n]) => `${n}×(${q > 0 ? '+' : '−'}${Math.abs(q)})`).join(' + ') + ' = 0';
+    const inner = ions.some(([e]) => e === 'OH') ? ' Di dalam ion OH⁻ sendiri ada satu ikatan kovalen tunggal O–H.' : ions.some(([e]) => e === 'NH4') ? ' Di dalam ion NH₄⁺ sendiri ada 4 ikatan kovalen tunggal N–H.' : '';
+    return `<div class="sub">🔗 Struktur & ikatan</div><div class="struct"><div class="ions">${ions.map(chip).join('<span class="times">+</span>')}</div><div class="sform" style="font-size:14px;font-weight:600">${check}</div></div>
+      <p class="txt" style="margin-top:8px">Ini <b>ikatan ion</b>, jadi <b>tidak digambar pakai garis</b> (–, =, ≡). Atom logam <b>melepas</b> elektron jadi ion positif, atom nonlogam <b>menangkap</b> elektron jadi ion negatif, lalu keduanya saling tarik seperti magnet. Jumlah muatannya harus nol.${inner}</p>
+      ${legendHTML(new Set(), true)}`;
+  }
+  if ((r.fx || []).includes('alloy') || p.id === 'Fe_l')
+    return `<div class="sub">🔗 Struktur & ikatan</div><p class="txt"><b>Ikatan logam</b>: tidak ada garis dan tidak ada ion pasangan. Atom-atom logam tersusun rapat dan elektron terluarnya bergerak bebas seperti “lautan elektron”. Inilah yang bikin logam bisa menghantar listrik dan bisa ditempa.</p>`;
+  return '';
+}
+
+// =================== PANELS ===================
+function setRes(html, showJump){ $('#res').innerHTML = html; $('#toCard').style.display = showJump ? '' : 'none'; }
+$('#toCard').onclick = () => { const c = $('#card'); window.scrollTo({top: c.getBoundingClientRect().top + window.scrollY - 12, behavior:'smooth'}); };
+const SUGGEST = [['Na','Cl'],['H','O'],['Mg','O'],['Fe','S'],['Na','H2O'],['Cs','H2O'],['Al','Fe2O3'],['Cu','Sn'],['Xe','F'],['He','O']];
+function renderSuggest(){
+  const box = $('#suggest'); if (!box) return;
+  box.innerHTML = SUGGEST.map(([a,b],i) => `<button class="sg" data-i="${i}">${partLabel(a)} + ${partLabel(b)}</button>`).join('');
+  box.querySelectorAll('.sg').forEach(btn => btn.onclick = () => tryRecipe(SUGGEST[+btn.dataset.i]));
+}
+renderSuggest();
+function renderCard(o){
+  const card = $('#card');
+  if (o.none){
+    card.innerHTML = `<div class="ph"><h2>📖 Penjelasan reaksi</h2></div>
+      <h3 class="rx-title">${o.a.label} + ${o.b.label}: tidak bereaksi 🤷</h3>
+      <div class="rx-sub">${itemName(o.a.item)} + ${itemName(o.b.item)}</div>
+      <div class="sub">Kenapa?</div><p class="txt">${o.msg}</p>
+      <div class="sub">Coba kombinasi lain</div><div class="suggest" id="suggest"></div>`;
+    renderSuggest(); return;
+  }
+  const r = o.r, p = r.product;
+  card.innerHTML = `<div class="ph"><h2>📖 Penjelasan reaksi</h2><span class="hint">${r.gen ? 'berdasarkan aturan umum' : ''}</span></div>
+    <h3 class="rx-title">${p.name}</h3>
+    <div class="rx-sub">${o.a.label} + ${o.b.label} → <b>${p.f}</b></div>
+    <div class="chips">${(r.kind||[]).map(k=>`<span class="chip">${k}</span>`).join('')}</div>
+    <div class="eq">${r.eq}</div>
+    <div class="sub">🤔 Apa yang terjadi?</div><p class="txt">${r.what}</p>
+    ${structureHTML(r, p)}
+    ${r.real ? `<div class="sub">🌏 Di dunia nyata</div><p class="txt">${r.real}</p>` : ''}
+    ${r.warn ? `<div class="warn">⚠️ ${r.warn}</div>` : ''}
+    <div class="sub">➡️ Lanjutkan</div><p class="txt" style="color:var(--muted)">${p.f} masih ada di labu. Seret unsur atau senyawa lain ke labu untuk lanjut bereaksi dengan ${p.f}, atau tekan <b>Kosongkan</b> untuk mulai baru. ${p.f} juga tersimpan di 🎒 Koleksi.</p>`;
+}
+function renderInv(){
+  const inv = $('#inv'); inv.innerHTML = '';
+  for (const [id, p] of inventory){
+    const b = document.createElement('div'); b.className = 'cmp';
+    b.innerHTML = `<i style="background:${p.col}"></i>${p.f}`; b.title = p.name;
+    makeDraggable(b, () => ({t:'cmp', id, f:p.f, name:p.name, col:p.col}));
+    inv.appendChild(b);
+  }
+}
+
+document.fonts?.ready?.then(sizeCanvas);
+requestAnimationFrame(frame);
+window.__lab = {addToChamber, resolve, EL, R, runSearch};
+})();
+</script>
+</body>
+</html>
